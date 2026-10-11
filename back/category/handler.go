@@ -65,6 +65,27 @@ func (h *Handler) Edit(c *gin.Context) {
 	})
 }
 
+func (h *Handler) Delete(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid category id"})
+		return
+	}
+	if err := h.service.Delete(id); err != nil {
+		if err.Error() == "category not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+			return
+		}
+		if err.Error() == "category has transactions" {
+			c.JSON(http.StatusConflict, gin.H{"error": "Não é possível excluir uma categoria com lançamentos."})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 func (h *Handler) GetAll(c *gin.Context) {
 	categories, err := h.service.GetAll()
 	if err != nil {
@@ -73,7 +94,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK,gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"categories": categories,
 	})
 }

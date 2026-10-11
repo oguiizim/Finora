@@ -62,3 +62,7 @@ func (s *Service) GetById(id int64) (*Category, error) {
 	}
 	return category, nil
 }
+
+func (s *Service) Delete(id int64) error {
+	return s.repository.Delete(id)
+}

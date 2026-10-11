@@ -10,33 +10,102 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CategoriasRouteImport } from './routes/categorias'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as LancamentosRouteImport } from './routes/lancamentos'
+import { Route as NovaReceitaRouteImport } from './routes/nova-receita'
+import { Route as NovoGastoRouteImport } from './routes/novo-gasto'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CategoriasRoute = CategoriasRouteImport.update({
+  id: '/categorias',
+  path: '/categorias',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LancamentosRoute = LancamentosRouteImport.update({
+  id: '/lancamentos',
+  path: '/lancamentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NovaReceitaRoute = NovaReceitaRouteImport.update({
+  id: '/nova-receita',
+  path: '/nova-receita',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NovoGastoRoute = NovoGastoRouteImport.update({
+  id: '/novo-gasto',
+  path: '/novo-gasto',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/categorias': typeof CategoriasRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/lancamentos': typeof LancamentosRoute
+  '/nova-receita': typeof NovaReceitaRoute
+  '/novo-gasto': typeof NovoGastoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/categorias': typeof CategoriasRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/lancamentos': typeof LancamentosRoute
+  '/nova-receita': typeof NovaReceitaRoute
+  '/novo-gasto': typeof NovoGastoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/categorias': typeof CategoriasRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/lancamentos': typeof LancamentosRoute
+  '/nova-receita': typeof NovaReceitaRoute
+  '/novo-gasto': typeof NovoGastoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/categorias'
+    | '/configuracoes'
+    | '/lancamentos'
+    | '/nova-receita'
+    | '/novo-gasto'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/categorias'
+    | '/configuracoes'
+    | '/lancamentos'
+    | '/nova-receita'
+    | '/novo-gasto'
+  id:
+    | '__root__'
+    | '/'
+    | '/categorias'
+    | '/configuracoes'
+    | '/lancamentos'
+    | '/nova-receita'
+    | '/novo-gasto'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CategoriasRoute: typeof CategoriasRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
+  LancamentosRoute: typeof LancamentosRoute
+  NovaReceitaRoute: typeof NovaReceitaRoute
+  NovoGastoRoute: typeof NovoGastoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +117,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/categorias': {
+      id: '/categorias'
+      path: '/categorias'
+      fullPath: '/categorias'
+      preLoaderRoute: typeof CategoriasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lancamentos': {
+      id: '/lancamentos'
+      path: '/lancamentos'
+      fullPath: '/lancamentos'
+      preLoaderRoute: typeof LancamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nova-receita': {
+      id: '/nova-receita'
+      path: '/nova-receita'
+      fullPath: '/nova-receita'
+      preLoaderRoute: typeof NovaReceitaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/novo-gasto': {
+      id: '/novo-gasto'
+      path: '/novo-gasto'
+      fullPath: '/novo-gasto'
+      preLoaderRoute: typeof NovoGastoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CategoriasRoute: CategoriasRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
+  LancamentosRoute: LancamentosRoute,
+  NovaReceitaRoute: NovaReceitaRoute,
+  NovoGastoRoute: NovoGastoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

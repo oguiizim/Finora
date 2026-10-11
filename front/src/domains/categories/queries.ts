@@ -1,0 +1,4 @@
+import { apiFetch, getAllTransactions } from '#/domains/transactions/queries.ts'
+export interface CategoryWithStats { id:string; name:string; type:'INCOME'|'EXPENSE'|'BOTH'; icon:string; color:string; isArchived:boolean; transactionCount:number; totalAmountInCents:number; createdAt:Date; updatedAt:Date }
+const colors=['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899']
+export async function listCategories(_params:{data?:any}={}) { const [r, tx] = await Promise.all([apiFetch<{categories:any[]}>('/category/all'),getAllTransactions()]); return r.categories.map((c,i):CategoryWithStats=>{const mine=tx.filter(t=>t.categoryId===String(c.id)); return {id:String(c.id),name:c.name,type:'BOTH',icon:'tag',color:colors[i%colors.length],isArchived:false,transactionCount:mine.length,totalAmountInCents:mine.reduce((s,t)=>s+t.amountInCents,0),createdAt:new Date(c.created_at),updatedAt:new Date(c.created_at)}}) }

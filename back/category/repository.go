@@ -30,18 +30,49 @@ func (r *Repository) Create(category Category) error {
 
 func (r *Repository) Edit(category Category) (*Category, error) {
 	var data Category
-	_, err := r.db.Exec(`
+	result, err := r.db.Exec(`
 	UPDATE categories 
 	SET name = ?
 	WHERE id = ?`, category.Name, category.ID)
 	if err != nil {
 		return nil, err
 	}
-	r.db.QueryRow(`
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	if affected == 0 {
+		return nil, errors.New("category not found")
+	}
+	err = r.db.QueryRow(`
 	SELECT id, name, created_at
-	FROM categories
-	WHERE id = ?`, category.ID).Scan(&data.ID, &data.Name, &data.CreatedAt)
+	FROM categories WHERE id = ?`, category.ID).Scan(&data.ID, &data.Name, &data.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
 	return &data, nil
+}
+
+func (r *Repository) Delete(id int64) error {
+	var transactionCount int
+	if err := r.db.QueryRow(`SELECT COUNT(*) FROM transactions WHERE category_id = ?`, id).Scan(&transactionCount); err != nil {
+		return err
+	}
+	if transactionCount > 0 {
+		return errors.New("category has transactions")
+	}
+	result, err := r.db.Exec(`DELETE FROM categories WHERE id = ?`, id)
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return errors.New("category not found")
+	}
+	return nil
 }
 
 func (r *Repository) GetAll() (*[]Category, error) {

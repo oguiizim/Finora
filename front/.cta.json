@@ -1,24 +1,17 @@
 {
-  "projectName": "front",
+  "projectName": "Finora",
   "mode": "file-router",
   "typescript": true,
-  "packageManager": "bun",
-  "includeExamples": false,
   "tailwind": true,
-  "projectPreset": "default",
-  "addOnOptions": {},
-  "git": false,
+  "packageManager": "bun",
+  "git": true,
   "install": true,
   "intent": true,
-  "routerOnly": false,
+  "addOnOptions": {},
+  "projectPreset": "default",
+  "includeExamples": false,
+  "routerOnly": true,
   "version": 1,
   "framework": "react",
-  "chosenAddOns": [
-    "biome",
-    "nitro",
-    "tanstack-query",
-    "table",
-    "shadcn",
-    "t3env"
-  ]
+  "chosenAddOns": []
 }
