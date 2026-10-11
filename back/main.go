@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/oguiizim/finora/server"
 )
@@ -13,8 +14,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println("API listening on :8080")
-	if err := http.ListenAndServe(":8080", handler); err != nil {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	address := ":" + port
+	log.Printf("API listening on %s", address)
+	if err := http.ListenAndServe(address, handler); err != nil {
 		log.Fatal(err)
 	}
 }
