@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
@@ -13,9 +14,11 @@ import (
 )
 
 type Migration struct {
-	Id      int64
-	Name    string
-	Updated bool
+	Id        int64
+	Name      string
+	Updated   bool
+	CratedAt  time.Time
+	UpdatedAt time.Time
 }
 
 func NewCloudConnection() (*sql.DB, error) {
@@ -47,7 +50,10 @@ func SeedDatabase(db *sql.DB) {
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS migrations(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL UNIQUE,
-		updated BOOLEAN DEFAULT (false));`)
+		updated BOOLEAN DEFAULT (false),
+		created_at TEXT NOT NULL DEFAULT (datetime('now')),
+		updated_at TEXT DEFAULT (datetime('now'))
+		);`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -80,9 +86,9 @@ func ExecMigrations(database *sql.DB, name string) {
 
 		if err == sql.ErrNoRows {
 			_, err := database.Exec(`
-                INSERT INTO migrations (name, updated)
-                VALUES (?, ?)
-            `, file.Name(), false)
+                INSERT INTO migrations (name, updated, created_at, updated_at)
+                VALUES (?, ?, ?, ?)
+            `, file.Name(), false, time.Now().Format("2006-01-02 15:04:05"), time.Now().Format("2006-01-02 15:04:05"))
 
 			if err != nil {
 				log.Fatal(err)
@@ -120,9 +126,9 @@ func ExecMigrations(database *sql.DB, name string) {
 
 			if _, err := database.Exec(`
                 UPDATE migrations
-                SET updated = true
+                SET updated = true, updated_at = ?
                 WHERE id = ?
-            `, migration.Id); err != nil {
+            `, time.Now().Format("2006-01-02 15:04:05"), migration.Id); err != nil {
 				log.Fatal(err)
 			}
 

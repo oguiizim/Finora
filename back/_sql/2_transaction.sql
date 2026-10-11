@@ -9,5 +9,5 @@ create table transactions(
     created_at text not null default (datetime('now')),
     updated_at text not null default (datetime('now')),
 
-    foreign key (category_id) references category(id)
+    foreign key (category_id) references categories(id)
 );
