@@ -1,4 +1,3 @@
 .env
-go.sum
 local.db
 main.exe
