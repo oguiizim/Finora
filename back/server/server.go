@@ -1,11 +1,14 @@
 package server
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -22,6 +25,12 @@ func NewHandler() (http.Handler, error) {
 	db, err := connectDatabase()
 	if err != nil {
 		return nil, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := db.PingContext(ctx); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("database connection failed: %w", err)
 	}
 
 	router := gin.New()

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -21,6 +22,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		apiHandler, initErr = server.NewHandler()
 	})
 	if initErr != nil {
+		log.Printf("API initialization failed: %v", initErr)
 		http.Error(w, "API initialization failed", http.StatusInternalServerError)
 		return
 	}
