@@ -4,6 +4,8 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ReferenceLine,
@@ -244,15 +246,59 @@ export function MonthlyEvolutionChart({
   monthlyChart,
   monthsInterval,
   onMonthsIntervalChange,
+  categoryWeeklyAnalysis,
 }: {
   monthlyChart: DashboardData['monthlyChart'];
   monthsInterval: number;
   onMonthsIntervalChange: (months: number) => void;
+  categoryWeeklyAnalysis?: DashboardData['categoryWeeklyAnalysis'];
 }) {
   const { resolvedTheme } = useAppUI();
   const isDark = resolvedTheme === 'dark';
   const gridColor = isDark ? '#27272a' : '#f1f5f9';
   const axisTextColor = isDark ? '#a1a1aa' : '#64748b';
+
+  if (categoryWeeklyAnalysis) {
+    const { categoryName, color, weeklyPoints, totalExpenseInCents } = categoryWeeklyAnalysis;
+    const weekColors = [color, `${color}cc`, `${color}99`, `${color}66`];
+    return (
+      <div className="p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white">Evolução da categoria</h3>
+            <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">{categoryName} nas últimas 4 semanas</p>
+          </div>
+          <span className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-amber-400/10 text-[11px] font-semibold text-emerald-700 dark:text-amber-400 whitespace-nowrap">Gasto total: {formatCurrencyFromCents(totalExpenseInCents)}</span>
+        </div>
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={weeklyPoints} margin={{ top: 8, right: 12, left: -12, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+              <XAxis dataKey="weekLabel" tick={{ fill: axisTextColor, fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={(value: number) => formatCompactCurrencyFromCents(value)} tick={{ fill: axisTextColor, fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload || payload.length === 0) return null;
+                  const item = payload[0]?.payload as NonNullable<DashboardData['categoryWeeklyAnalysis']>['weeklyPoints'][number] | undefined;
+                  if (!item) return null;
+                  return <div className="p-3 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg text-xs space-y-1"><p className="font-semibold text-slate-900 dark:text-white">{item.weekLabel}</p><p className="font-mono-tabular" style={{ color }}>{categoryName}: {formatCurrencyFromCents(item.expenseInCents)}</p></div>;
+                }}
+              />
+              <Line type="linear" dataKey="expenseInCents" name={categoryName} stroke={color} strokeWidth={3} dot={{ r: 4, fill: color, strokeWidth: 0 }} activeDot={{ r: 6 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-4">
+          {weeklyPoints.map((point, index) => (
+            <div key={point.startDate} className="flex items-center justify-between gap-3 text-xs">
+              <span className="flex items-center gap-2 text-slate-600 dark:text-zinc-400"><i className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: weekColors[index] }} />{point.weekLabel}</span>
+              <span className="font-mono-tabular font-bold" style={{ color: weekColors[index] }}>{formatCurrencyFromCents(point.expenseInCents)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
@@ -369,6 +415,59 @@ export function MonthlyEvolutionChart({
             />
           </BarChart>
         </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+export function CategoryWeeklyBreakdownSection({
+  analysis,
+}: {
+  analysis: NonNullable<DashboardData['categoryWeeklyAnalysis']>;
+}) {
+  const { weeklyPoints, categoryName, color, totalExpenseInCents } = analysis;
+  const pieColors = [color, `${color}cc`, `${color}99`, `${color}66`];
+
+  return (
+    <div className="p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white">Gastos de {categoryName}</h3>
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">Cada fatia representa a semana iniciada no dia indicado</p>
+        </div>
+        <span className="text-xs font-mono-tabular font-semibold text-slate-900 dark:text-zinc-100">Gasto total: {formatCurrencyFromCents(totalExpenseInCents)}</span>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <div className="lg:col-span-4 h-52 relative flex items-center justify-center">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={weeklyPoints} dataKey="expenseInCents" nameKey="weekLabel" innerRadius={56} outerRadius={82} paddingAngle={2} stroke="none">
+                {weeklyPoints.map((point, index) => <Cell key={point.startDate} fill={pieColors[index]} />)}
+              </Pie>
+              <Tooltip content={({ active, payload }) => {
+                if (!active || !payload || payload.length === 0) return null;
+                const item = payload[0]?.payload as NonNullable<DashboardData['categoryWeeklyAnalysis']>['weeklyPoints'][number] | undefined;
+                if (!item) return null;
+                return <div className="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg text-xs"><p className="font-semibold text-slate-900 dark:text-white">{item.weekLabel}</p><p className="font-mono-tabular mt-0.5" style={{ color: pieColors[weeklyPoints.findIndex((point) => point.startDate === item.startDate)] }}>{formatCurrencyFromCents(item.expenseInCents)}</p></div>;
+              }} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center"><span className="text-[11px] text-slate-400 dark:text-zinc-500">Total no período</span><span className="text-xs font-mono-tabular font-bold text-slate-900 dark:text-white mt-1">{formatCurrencyFromCents(totalExpenseInCents)}</span></div>
+        </div>
+        <div className="lg:col-span-8 space-y-3.5">
+          {weeklyPoints.map((point, index) => {
+            const share = totalExpenseInCents > 0 ? (point.expenseInCents / totalExpenseInCents) * 100 : 0;
+            return <div key={point.startDate} className="space-y-1.5">
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="flex items-center gap-2 text-slate-600 dark:text-zinc-400"><i className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pieColors[index] }} />{point.weekLabel}</span>
+                <span className="font-mono-tabular font-bold" style={{ color: pieColors[index] }}>{formatCurrencyFromCents(point.expenseInCents)}</span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-zinc-800/90 overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-300" style={{ width: `${share}%`, backgroundColor: pieColors[index] }} />
+              </div>
+            </div>;
+          })}
+        </div>
       </div>
     </div>
   );
