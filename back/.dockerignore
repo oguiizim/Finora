@@ -1,0 +1,9 @@
+.env
+.env.*
+local.db
+main.exe
+.git
+.gocache
+bin/
+tmp/
+*.log
