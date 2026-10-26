@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/oguiizim/finora/auth"
 )
 
 type Handler struct {
@@ -42,7 +43,7 @@ func (h *Handler) Create(c *gin.Context) {
 		})
 		return
 	}
-	transaction, err := h.service.Create(req)
+	transaction, err := h.service.Create(auth.UserID(c), req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -51,7 +52,7 @@ func (h *Handler) Create(c *gin.Context) {
 }
 
 func (h *Handler) GetAll(c *gin.Context) {
-	items, err := h.service.GetAll()
+	items, err := h.service.GetAll(auth.UserID(c))
 	if err != nil {
 		respondError(c, err)
 		return
@@ -63,7 +64,7 @@ func (h *Handler) GetByID(c *gin.Context) {
 	if !ok {
 		return
 	}
-	item, err := h.service.GetByID(id)
+	item, err := h.service.GetByID(auth.UserID(c), id)
 	if err != nil {
 		respondError(c, err)
 		return
@@ -80,7 +81,7 @@ func (h *Handler) Update(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	item, err := h.service.Update(id, req)
+	item, err := h.service.Update(auth.UserID(c), id, req)
 	if err != nil {
 		if err.Error() == "transaction not found" {
 			respondError(c, err)
@@ -96,14 +97,14 @@ func (h *Handler) Delete(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if err := h.service.Delete(id); err != nil {
+	if err := h.service.Delete(auth.UserID(c), id); err != nil {
 		respondError(c, err)
 		return
 	}
 	c.Status(http.StatusNoContent)
 }
 func (h *Handler) Summary(c *gin.Context) {
-	summary, err := h.service.Summary()
+	summary, err := h.service.Summary(auth.UserID(c))
 	if err != nil {
 		respondError(c, err)
 		return

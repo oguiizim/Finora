@@ -6,63 +6,24 @@ import (
 	"time"
 )
 
-type Service struct {
-	repository *Repository
-}
+type Service struct{ repository *Repository }
 
-func InitService(repository *Repository) *Service {
-	return &Service{
-		repository: repository,
-	}
-}
-
-func (s *Service) Create(category CreateCategory) error {
-	category.Name = strings.TrimSpace(category.Name)
-	category.Name = strings.Trim(category.Name, `"`)
+func InitService(repository *Repository) *Service { return &Service{repository: repository} }
+func (s *Service) Create(userID int64, category CreateCategory) error {
+	category.Name = strings.Trim(strings.TrimSpace(category.Name), `"`)
 	if category.Name == "" {
-		return errors.New("Name cannot be empty")
+		return errors.New("name cannot be empty")
 	}
-
-	err := s.repository.Create(Category{
-		Name:      category.Name,
-		CreatedAt: time.Now(),
-	})
-	if err != nil {
-		return err
-	}
-	return nil
+	return s.repository.Create(Category{UserID: userID, Name: category.Name, CreatedAt: time.Now()})
 }
-
-func (s *Service) Edit(category EditCategory) (*Category, error) {
+func (s *Service) Edit(userID int64, category EditCategory) (*Category, error) {
 	if strings.TrimSpace(category.Name) == "" {
-		return nil, errors.New("Name cannot be empty")
+		return nil, errors.New("name cannot be empty")
 	}
-	data, err := s.repository.Edit(Category{
-		ID:   category.ID,
-		Name: category.Name,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
+	return s.repository.Edit(Category{ID: category.ID, UserID: userID, Name: category.Name})
 }
-
-func (s *Service) GetAll() (*[]Category, error) {
-	categories, err := s.repository.GetAll()
-	if err != nil {
-		return nil, err
-	}
-	return categories, nil
+func (s *Service) GetAll(userID int64) (*[]Category, error) { return s.repository.GetAll(userID) }
+func (s *Service) GetById(userID, id int64) (*Category, error) {
+	return s.repository.GetById(userID, id)
 }
-
-func (s *Service) GetById(id int64) (*Category, error) {
-	category, err := s.repository.GetById(id)
-	if err != nil {
-		return nil, err
-	}
-	return category, nil
-}
-
-func (s *Service) Delete(id int64) error {
-	return s.repository.Delete(id)
-}
+func (s *Service) Delete(userID, id int64) error { return s.repository.Delete(userID, id) }

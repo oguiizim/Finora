@@ -5,6 +5,7 @@ import {
   FolderKanban,
   LayoutDashboard,
   ListOrdered,
+  LogOut,
   Monitor,
   Moon,
   Plus,
@@ -14,9 +15,11 @@ import {
 import type React from "react";
 import { QuickTransactionModal } from "#/components/transactions/quick-transaction-modal.tsx";
 import { useAppUI } from "#/components/ui/theme-provider.tsx";
+import { useAuth } from "#/components/auth/auth-provider.tsx";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { theme, resolvedTheme, setTheme, openQuickTransaction } = useAppUI();
+  const { session, signOut } = useAuth();
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
 
@@ -76,6 +79,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Theme Switcher Footer */}
         <div className="p-4 border-t border-slate-200/80 dark:border-zinc-800/80">
+          <div className="mb-3 flex items-center justify-between gap-2 px-1">
+            <span className="truncate text-xs font-semibold text-slate-700 dark:text-zinc-200">{session?.user.name}</span>
+            <button type="button" onClick={() => void signOut()} title="Sair" aria-label="Sair" className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-red-600 dark:hover:bg-zinc-900"><LogOut className="size-4" /></button>
+          </div>
           <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
             <button
               type="button"
@@ -88,7 +95,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               title="Tema Claro"
             >
               <Sun className="w-3.5 h-3.5" />
-              <span>Light</span>
+              <span>Claro</span>
             </button>
             <button
               type="button"
@@ -101,7 +108,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               title="Tema Escuro"
             >
               <Moon className="w-3.5 h-3.5" />
-              <span>Dark</span>
+              <span>Escuro</span>
             </button>
             <button
               type="button"
@@ -114,7 +121,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               title="Seguir sistema"
             >
               <Monitor className="w-3.5 h-3.5" />
-              <span>Auto</span>
+              <span>Sistema</span>
             </button>
           </div>
         </div>
