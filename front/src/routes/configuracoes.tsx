@@ -22,7 +22,7 @@ export const Route = createFileRoute("/configuracoes")({
                     : "px-4 py-2 rounded-xl bg-slate-100 dark:bg-zinc-900 text-xs"
                 }
               >
-                {x}
+                {{ light: "Claro", dark: "Escuro", system: "Sistema" }[x]}
               </button>
             ))}
           </div>
