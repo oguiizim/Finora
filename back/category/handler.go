@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/oguiizim/finora/auth"
 )
 
 type Handler struct {
@@ -25,7 +26,7 @@ func (h *Handler) Create(c *gin.Context) {
 		})
 		return
 	}
-	err := h.service.Create(req)
+	err := h.service.Create(auth.UserID(c), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -53,7 +54,7 @@ func (h *Handler) Edit(c *gin.Context) {
 		return
 	}
 	req.ID = id
-	category, err := h.service.Edit(req)
+	category, err := h.service.Edit(auth.UserID(c), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -71,7 +72,7 @@ func (h *Handler) Delete(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid category id"})
 		return
 	}
-	if err := h.service.Delete(id); err != nil {
+	if err := h.service.Delete(auth.UserID(c), id); err != nil {
 		if err.Error() == "category not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
 			return
@@ -87,7 +88,7 @@ func (h *Handler) Delete(c *gin.Context) {
 }
 
 func (h *Handler) GetAll(c *gin.Context) {
-	categories, err := h.service.GetAll()
+	categories, err := h.service.GetAll(auth.UserID(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -107,7 +108,7 @@ func (h *Handler) GetById(c *gin.Context) {
 		})
 		return
 	}
-	category, err := h.service.GetById(id)
+	category, err := h.service.GetById(auth.UserID(c), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

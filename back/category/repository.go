@@ -6,34 +6,15 @@ import (
 	"time"
 )
 
-type Repository struct {
-	db *sql.DB
-}
+type Repository struct{ db *sql.DB }
 
-func InitRepository(database *sql.DB) *Repository {
-	return &Repository{
-		db: database,
-	}
-}
-
+func InitRepository(database *sql.DB) *Repository { return &Repository{db: database} }
 func (r *Repository) Create(category Category) error {
-	_, err := r.db.Exec(`
-	INSERT INTO categories (name, created_at)
-	VALUES(?, ?)`,
-		category.Name,
-		category.CreatedAt.Format("2006-01-02 15:04:05"))
-	if err != nil {
-		return err
-	}
+	_, err := r.db.Exec(`INSERT INTO categories (name, user_id, created_at) VALUES (?, ?, ?)`, category.Name, category.UserID, category.CreatedAt.Format("2006-01-02 15:04:05"))
 	return err
 }
-
 func (r *Repository) Edit(category Category) (*Category, error) {
-	var data Category
-	result, err := r.db.Exec(`
-	UPDATE categories 
-	SET name = ?
-	WHERE id = ?`, category.Name, category.ID)
+	result, err := r.db.Exec(`UPDATE categories SET name = ? WHERE id = ? AND user_id = ?`, category.Name, category.ID, category.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -44,24 +25,17 @@ func (r *Repository) Edit(category Category) (*Category, error) {
 	if affected == 0 {
 		return nil, errors.New("category not found")
 	}
-	err = r.db.QueryRow(`
-	SELECT id, name, created_at
-	FROM categories WHERE id = ?`, category.ID).Scan(&data.ID, &data.Name, &data.CreatedAt)
-	if err != nil {
-		return nil, err
-	}
-	return &data, nil
+	return r.GetById(category.UserID, category.ID)
 }
-
-func (r *Repository) Delete(id int64) error {
-	var transactionCount int
-	if err := r.db.QueryRow(`SELECT COUNT(*) FROM transactions WHERE category_id = ?`, id).Scan(&transactionCount); err != nil {
+func (r *Repository) Delete(userID, id int64) error {
+	var count int
+	if err := r.db.QueryRow(`SELECT COUNT(*) FROM transactions WHERE category_id = ? AND user_id = ?`, id, userID).Scan(&count); err != nil {
 		return err
 	}
-	if transactionCount > 0 {
+	if count > 0 {
 		return errors.New("category has transactions")
 	}
-	result, err := r.db.Exec(`DELETE FROM categories WHERE id = ?`, id)
+	result, err := r.db.Exec(`DELETE FROM categories WHERE id = ? AND user_id = ?`, id, userID)
 	if err != nil {
 		return err
 	}
@@ -74,42 +48,42 @@ func (r *Repository) Delete(id int64) error {
 	}
 	return nil
 }
-
-func (r *Repository) GetAll() (*[]Category, error) {
-	rows, err := r.db.Query(`SELECT id, name, created_at FROM categories`)
+func (r *Repository) GetAll(userID int64) (*[]Category, error) {
+	rows, err := r.db.Query(`SELECT id, user_id, name, created_at FROM categories WHERE user_id = ?`, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	categories := []Category{}
-
 	for rows.Next() {
-		var c Category
+		var item Category
 		var created string
-		err := rows.Scan(&c.ID, &c.Name, &created)
+		if err := rows.Scan(&item.ID, &item.UserID, &item.Name, &created); err != nil {
+			return nil, err
+		}
+		parsed, err := time.Parse("2006-01-02 15:04:05", created)
 		if err != nil {
 			return nil, err
 		}
-		c.CreatedAt, err = time.Parse("2006-01-02 15:04:05", created)
-		if err != nil {
-			return nil, err
-		}
-		categories = append(categories, c)
+		item.CreatedAt = parsed
+		categories = append(categories, item)
 	}
-
-	if err := rows.Err(); err != nil {
+	return &categories, rows.Err()
+}
+func (r *Repository) GetById(userID, id int64) (*Category, error) {
+	var item Category
+	var created string
+	err := r.db.QueryRow(`SELECT id, user_id, name, created_at FROM categories WHERE id = ? AND user_id = ?`, id, userID).Scan(&item.ID, &item.UserID, &item.Name, &created)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, errors.New("category not found")
+	}
+	if err != nil {
 		return nil, err
 	}
-	return &categories, nil
-}
-
-func (r *Repository) GetById(id int64) (*Category, error) {
-	var data Category
-	result := r.db.QueryRow(`
-	SELECT id, name, created_at FROM categories
-	WHERE id = ?`, id).Scan(&data.ID, &data.Name, &data.CreatedAt)
-	if result.Error() == sql.ErrNoRows.Error() {
-		return nil, errors.New("Category not found")
+	parsed, err := time.Parse("2006-01-02 15:04:05", created)
+	if err != nil {
+		return nil, err
 	}
-	return &data, nil
+	item.CreatedAt = parsed
+	return &item, nil
 }

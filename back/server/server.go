@@ -12,9 +12,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/oguiizim/finora/auth"
 	"github.com/oguiizim/finora/category"
 	"github.com/oguiizim/finora/database"
 	"github.com/oguiizim/finora/transaction"
+	"github.com/oguiizim/finora/user"
 )
 
 func NewHandler() (http.Handler, error) {
@@ -35,7 +37,12 @@ func NewHandler() (http.Handler, error) {
 
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery(), corsMiddleware())
-	registerRoutes(router.Group("/api"), db)
+	tokens, err := auth.NewTokenManager(os.Getenv("JWT_SECRET"))
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+	registerRoutes(router.Group("/api"), db, tokens)
 	return router, nil
 }
 
@@ -52,18 +59,26 @@ func connectDatabase() (*sql.DB, error) {
 	return database.NewLocalConnection()
 }
 
-func registerRoutes(api *gin.RouterGroup, db *sql.DB) {
+func registerRoutes(api *gin.RouterGroup, db *sql.DB, tokens *auth.TokenManager) {
 	categoryHandler := category.InitHandler(category.InitService(category.InitRepository(db)))
 	transactionHandler := transaction.InitHandler(transaction.InitService(transaction.InitRepository(db)))
+	userHandler := user.InitHandler(user.InitService(user.InitRepository(db), tokens))
 
-	categories := api.Group("/category")
+	authRoutes := api.Group("/auth")
+	authRoutes.POST("/register", userHandler.Register)
+	authRoutes.POST("/login", userHandler.Login)
+	authRoutes.POST("/refresh", userHandler.Refresh)
+	authRoutes.GET("/me", auth.RequireAuthentication(tokens), userHandler.Me)
+	authRoutes.POST("/logout", auth.RequireAuthentication(tokens), userHandler.Logout)
+
+	categories := api.Group("/category", auth.RequireAuthentication(tokens))
 	categories.POST("/", categoryHandler.Create)
 	categories.PUT("/:id", categoryHandler.Edit)
 	categories.DELETE("/:id", categoryHandler.Delete)
 	categories.GET("/all", categoryHandler.GetAll)
 	categories.GET("/:id", categoryHandler.GetById)
 
-	transactions := api.Group("/transaction")
+	transactions := api.Group("/transaction", auth.RequireAuthentication(tokens))
 	transactions.POST("/", transactionHandler.Create)
 	transactions.GET("/all", transactionHandler.GetAll)
 	transactions.GET("/summary", transactionHandler.Summary)
@@ -83,7 +98,7 @@ func corsMiddleware() gin.HandlerFunc {
 			c.Header("Vary", "Origin")
 		}
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)
 			return
