@@ -17,8 +17,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	database.ExecMigrations(localDb, "Local.db")
-	database.ExecMigrations(cloudDb, "Finora.db")
+	database.ExecMigrations(localDb, "local.db")
+	database.ExecMigrations(cloudDb, "finora.db")
 	defer localDb.Close()
 	defer cloudDb.Close()
 }

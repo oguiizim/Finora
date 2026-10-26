@@ -88,7 +88,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               title="Tema Claro"
             >
               <Sun className="w-3.5 h-3.5" />
-              <span>Light</span>
+              <span>Claro</span>
             </button>
             <button
               type="button"
@@ -101,7 +101,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               title="Tema Escuro"
             >
               <Moon className="w-3.5 h-3.5" />
-              <span>Dark</span>
+              <span>Escuro</span>
             </button>
             <button
               type="button"
@@ -114,7 +114,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               title="Seguir sistema"
             >
               <Monitor className="w-3.5 h-3.5" />
-              <span>Auto</span>
+              <span>Sistema</span>
             </button>
           </div>
         </div>
@@ -146,6 +146,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               ) : (
                 <Moon className="w-4 h-4 text-slate-700" />
               )}
+            </button>
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="min-w-[38px] min-h-[38px] rounded-lg bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex items-center justify-center text-slate-500 hover:text-red-600 dark:text-zinc-300"
+              aria-label="Sair"
+              title="Sair"
+            >
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </header>
