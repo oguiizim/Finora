@@ -46,6 +46,12 @@ export function AdvancedCategoryFilter({
         )}
       </button>
 
+      {selectedCategory && (
+        <button type="button" onClick={onClear} className="text-[11px] text-slate-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 flex w-fit items-center gap-1 min-h-[34px] px-2.5 rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20">
+          <X className="w-3 h-3" /> Remover filtro de categoria
+        </button>
+      )}
+
       {isOpen && (
         <div className="p-3.5 rounded-xl bg-white dark:bg-[#12141a] border border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-end gap-3">
           <div className="shrink-0">
@@ -87,11 +93,6 @@ export function AdvancedCategoryFilter({
         </div>
       )}
 
-      {selectedCategory && !isOpen && (
-        <button type="button" onClick={onClear} className="text-[11px] text-slate-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 inline-flex items-center gap-1 sm:min-h-[34px] sm:px-2.5 sm:rounded-lg sm:border sm:border-red-200 sm:bg-red-50 sm:text-red-700 sm:hover:bg-red-100 sm:dark:border-red-500/30 sm:dark:bg-red-500/10 sm:dark:text-red-400 sm:dark:hover:bg-red-500/20">
-          <X className="w-3 h-3" /> Remover filtro de categoria
-        </button>
-      )}
     </div>
   )
 }

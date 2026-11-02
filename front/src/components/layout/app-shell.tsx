@@ -8,11 +8,14 @@ import {
   LogOut,
   Monitor,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   Settings,
   Sun,
 } from "lucide-react";
 import type React from "react";
+import { useState } from "react";
 import { QuickTransactionModal } from "#/components/transactions/quick-transaction-modal.tsx";
 import { useAppUI } from "#/components/ui/theme-provider.tsx";
 import { useAuth } from "#/components/auth/auth-provider.tsx";
@@ -22,6 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { session, signOut } = useAuth();
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const navItems = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -39,7 +43,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex bg-slate-50 dark:bg-[#0a0b0e] text-slate-900 dark:text-zinc-100">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white dark:bg-[#101217] border-r border-slate-200/90 dark:border-zinc-800/90 z-30">
+      <aside
+        className={`hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white dark:bg-[#101217] border-r border-slate-200/90 dark:border-zinc-800/90 z-30 transition-transform duration-200 ease-out ${
+          isSidebarCollapsed ? "md:-translate-x-full" : "md:translate-x-0"
+        }`}
+      >
         <div className="h-16 px-6 flex items-center justify-between border-b border-slate-200/80 dark:border-zinc-800/80">
           <Link
             to="/"
@@ -50,6 +58,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
             <span>Finora</span>
           </Link>
+          <button
+            type="button"
+            onClick={() => setIsSidebarCollapsed(true)}
+            className="-mr-2 inline-flex size-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white"
+            aria-label="Ocultar menu lateral"
+            title="Ocultar menu lateral"
+          >
+            <PanelLeftClose className="size-4" />
+          </button>
         </div>
 
         {/* Navigation Links */}
@@ -127,8 +144,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
+      {isSidebarCollapsed && (
+        <button
+          type="button"
+          onClick={() => setIsSidebarCollapsed(false)}
+          className="hidden md:inline-flex fixed top-3 left-3 z-30 size-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-zinc-800 dark:bg-[#101217] dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-white"
+          aria-label="Mostrar menu lateral"
+          title="Mostrar menu lateral"
+        >
+          <PanelLeftOpen className="size-4" />
+        </button>
+      )}
+
       {/* Main Content Area */}
-      <div className="flex-1 md:pl-64 flex flex-col min-w-0">
+      <div
+        className={`flex-1 flex flex-col min-w-0 transition-[padding] duration-200 ease-out ${
+          isSidebarCollapsed ? "md:pl-0" : "md:pl-64"
+        }`}
+      >
         {/* Mobile Top App Bar (compact 54px, obeying 15% sticky cap) */}
         <header className="md:hidden sticky top-0 z-30 h-14 px-4 bg-white/90 dark:bg-[#101217]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-zinc-800/80 flex items-center justify-between">
           <Link

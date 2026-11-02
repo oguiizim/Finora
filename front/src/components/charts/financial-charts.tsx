@@ -20,6 +20,7 @@ import type { DashboardData } from '#/domains/dashboard/calculations.ts';
 import {
   formatCompactCurrencyFromCents,
   formatCurrencyFromCents,
+  formatDateBR,
   formatPercentage,
 } from '#/lib/formatters/index.ts';
 
@@ -259,29 +260,28 @@ export function MonthlyEvolutionChart({
   const axisTextColor = isDark ? '#a1a1aa' : '#64748b';
 
   if (categoryWeeklyAnalysis) {
-    const { categoryName, color, weeklyPoints, totalExpenseInCents } = categoryWeeklyAnalysis;
-    const weekColors = [color, `${color}cc`, `${color}99`, `${color}66`];
+    const { categoryName, color, dailyPoints, totalExpenseInCents } = categoryWeeklyAnalysis;
     return (
       <div className="p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <h3 className="text-base font-semibold text-slate-900 dark:text-white">Evolução da categoria</h3>
-            <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">{categoryName} nas últimas 4 semanas</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">{categoryName} por dia no período selecionado</p>
           </div>
           <span className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-amber-400/10 text-[11px] font-semibold text-emerald-700 dark:text-amber-400 whitespace-nowrap">Gasto total: {formatCurrencyFromCents(totalExpenseInCents)}</span>
         </div>
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={weeklyPoints} margin={{ top: 8, right: 12, left: -12, bottom: 0 }}>
+            <LineChart data={dailyPoints} margin={{ top: 8, right: 12, left: -12, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
-              <XAxis dataKey="weekLabel" tick={{ fill: axisTextColor, fontSize: 12 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="dayLabel" minTickGap={24} tick={{ fill: axisTextColor, fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis tickFormatter={(value: number) => formatCompactCurrencyFromCents(value)} tick={{ fill: axisTextColor, fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip
                 content={({ active, payload }) => {
                   if (!active || !payload || payload.length === 0) return null;
-                  const item = payload[0]?.payload as NonNullable<DashboardData['categoryWeeklyAnalysis']>['weeklyPoints'][number] | undefined;
+                  const item = payload[0]?.payload as NonNullable<DashboardData['categoryWeeklyAnalysis']>['dailyPoints'][number] | undefined;
                   if (!item) return null;
-                  return <div className="p-3 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg text-xs space-y-1"><p className="font-semibold text-slate-900 dark:text-white">{item.weekLabel}</p><p className="font-mono-tabular" style={{ color }}>{categoryName}: {formatCurrencyFromCents(item.expenseInCents)}</p></div>;
+                  return <div className="p-3 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg text-xs space-y-1"><p className="font-semibold text-slate-900 dark:text-white">{formatDateBR(item.date)}</p><p className="font-mono-tabular" style={{ color }}>{categoryName}: {formatCurrencyFromCents(item.expenseInCents)}</p></div>;
                 }}
               />
               <Line type="linear" dataKey="expenseInCents" name={categoryName} stroke={color} strokeWidth={3} dot={{ r: 4, fill: color, strokeWidth: 0 }} activeDot={{ r: 6 }} />
@@ -289,10 +289,10 @@ export function MonthlyEvolutionChart({
           </ResponsiveContainer>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-4">
-          {weeklyPoints.map((point, index) => (
-            <div key={point.startDate} className="flex items-center justify-between gap-3 text-xs">
-              <span className="flex items-center gap-2 text-slate-600 dark:text-zinc-400"><i className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: weekColors[index] }} />{point.weekLabel}</span>
-              <span className="font-mono-tabular font-bold" style={{ color: weekColors[index] }}>{formatCurrencyFromCents(point.expenseInCents)}</span>
+          {dailyPoints.map((point) => (
+            <div key={point.date} className="flex items-center justify-between gap-3 text-xs">
+              <span className="flex items-center gap-2 text-slate-600 dark:text-zinc-400"><i className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />{point.dayLabel}</span>
+              <span className="font-mono-tabular font-bold" style={{ color }}>{formatCurrencyFromCents(point.expenseInCents)}</span>
             </div>
           ))}
         </div>

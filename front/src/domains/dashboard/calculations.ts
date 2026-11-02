@@ -8,6 +8,7 @@ import {
   formatCurrencyFromCents,
   formatMonthYearBR,
   formatPercentage,
+  formatShortDateBR,
 } from '#/lib/formatters/index.ts';
 
 export interface CategoryBreakdownItem {
@@ -70,6 +71,12 @@ export interface WeeklyHistoryPoint {
   isCurrentWeek: boolean;
 }
 
+export interface CategoryDailyPoint {
+  date: string;
+  dayLabel: string;
+  expenseInCents: number;
+}
+
 export interface MonthlyEvolutionPoint {
   monthKey: string; // YYYY-MM
   monthLabel: string; // Out/26
@@ -84,6 +91,7 @@ export interface CategoryWeeklyAnalysis {
   color: string;
   totalExpenseInCents: number;
   weeklyPoints: WeeklyHistoryPoint[];
+  dailyPoints: CategoryDailyPoint[];
 }
 
 export interface DashboardData {
@@ -92,6 +100,8 @@ export interface DashboardData {
   cards: {
     balanceInCents: number;
     balanceStatus: 'POSITIVE' | 'NEGATIVE' | 'ZERO';
+    totalBalanceInCents: number;
+    totalBalanceStatus: 'POSITIVE' | 'NEGATIVE' | 'ZERO';
     previousBalanceInCents: number;
     balanceVariationPercent: number | null;
     balanceDiffInCents: number;
@@ -172,6 +182,18 @@ export function buildDashboardAnalytics(params: {
   } = params;
 
   const hasAnyTransactions = allTransactions.length > 0;
+
+  let totalIncomeInCents = 0;
+  let totalExpenseInCents = 0;
+  for (const transaction of allTransactions) {
+    if (transaction.type === 'INCOME') {
+      totalIncomeInCents += transaction.amountInCents;
+    } else {
+      totalExpenseInCents += transaction.amountInCents;
+    }
+  }
+  const { balanceInCents: totalBalanceInCents, status: totalBalanceStatus } =
+    calculatePeriodBalance(totalIncomeInCents, totalExpenseInCents);
 
   // 1. Filter current and previous period transactions
   const currentPeriodTxs = allTransactions.filter(
@@ -471,10 +493,21 @@ export function buildDashboardAnalytics(params: {
     })
     .sort((a, b) => b.amountInCents - a.amountInCents);
 
+  const filteredCurrentPeriodTxs = categoryId
+    ? currentPeriodTxs.filter(
+        (transaction) =>
+          (transaction.categoryId || 'uncategorized') === categoryId,
+      )
+    : currentPeriodTxs;
+
   // 5. Top Expenses in the Period
-  const currentExpenseTxs = currentPeriodTxs
+  const currentExpenseTxs = filteredCurrentPeriodTxs
     .filter((t) => t.type === 'EXPENSE')
     .sort((a, b) => b.amountInCents - a.amountInCents);
+  const currentExpenseTotalInCents = currentExpenseTxs.reduce(
+    (sum, transaction) => sum + transaction.amountInCents,
+    0,
+  );
 
   const topExpenses = currentExpenseTxs.slice(0, 6).map((t) => ({
     id: t.id,
@@ -484,8 +517,10 @@ export function buildDashboardAnalytics(params: {
     date: t.date,
     amountInCents: t.amountInCents,
     shareOfPeriodPercent:
-      expenseInCents > 0
-        ? Number(((t.amountInCents / expenseInCents) * 100).toFixed(1))
+      currentExpenseTotalInCents > 0
+        ? Number(
+            ((t.amountInCents / currentExpenseTotalInCents) * 100).toFixed(1),
+          )
         : 0,
   }));
 
@@ -683,6 +718,25 @@ export function buildDashboardAnalytics(params: {
         (transaction.categoryId || 'uncategorized') === categoryId,
     );
     const categorySample = categoryTransactions[0];
+    const categoryPeriodTransactions = categoryTransactions.filter(
+      (transaction) =>
+        transaction.date >= periodRange.startDate &&
+        transaction.date <= periodRange.endDate,
+    );
+    const expensesByDay = new Map<string, number>();
+    for (const transaction of categoryPeriodTransactions) {
+      expensesByDay.set(
+        transaction.date,
+        (expensesByDay.get(transaction.date) || 0) + transaction.amountInCents,
+      );
+    }
+    const dailyPoints: CategoryDailyPoint[] = Array.from(expensesByDay.entries())
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .map(([date, expenseInCents]) => ({
+        date,
+        dayLabel: formatShortDateBR(date),
+        expenseInCents,
+      }));
     const [endYear, endMonth, endDay] = periodRange.endDate
       .split('-')
       .map(Number);
@@ -720,13 +774,10 @@ export function buildDashboardAnalytics(params: {
       categoryId,
       categoryName: categorySample?.categoryName || selectedCategoryName || 'Categoria selecionada',
       color: categorySample?.categoryColor || selectedCategoryColor || '#16a34a',
-      totalExpenseInCents: categoryTransactions
-        .filter(
-          (transaction) =>
-            transaction.date >= periodRange.startDate && transaction.date <= periodRange.endDate,
-        )
+      totalExpenseInCents: categoryPeriodTransactions
         .reduce((sum, transaction) => sum + transaction.amountInCents, 0),
       weeklyPoints,
+      dailyPoints,
     };
   }
 
@@ -736,6 +787,8 @@ export function buildDashboardAnalytics(params: {
     cards: {
       balanceInCents,
       balanceStatus,
+      totalBalanceInCents,
+      totalBalanceStatus,
       previousBalanceInCents,
       balanceVariationPercent: balanceVar.percentage,
       balanceDiffInCents: balanceVar.absoluteDiffInCents,
@@ -772,6 +825,6 @@ export function buildDashboardAnalytics(params: {
     topExpenses,
     aboveAverageAnalysis,
     insights,
-    recentTransactions: currentPeriodTxs.slice(0, 8),
+    recentTransactions: filteredCurrentPeriodTxs.slice(0, 8),
   };
 }

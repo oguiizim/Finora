@@ -33,6 +33,31 @@ const QUICK_AMOUNTS_CENTS = [
   { label: '+R$ 100', cents: 10000 },
 ];
 
+function formatDateForInput(isoDate: string): string {
+  const [year, month, day] = isoDate.split('-');
+  return year && month && day ? `${day}/${month}/${year}` : '';
+}
+
+function formatDateDigits(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function parseBrazilianDate(value: string): string | null {
+  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return null;
+
+  const [, day, month, year] = match;
+  const isoDate = `${year}-${month}-${day}`;
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
+
+  return date.getFullYear() === Number(year) && date.getMonth() === Number(month) - 1 && date.getDate() === Number(day)
+    ? isoDate
+    : null;
+}
+
 export function TransactionForm({
   defaultType = 'EXPENSE',
   editingTransaction = null,
@@ -60,6 +85,9 @@ export function TransactionForm({
   );
   const [date, setDate] = useState<string>(
     editingTransaction ? editingTransaction.date : getTodayISO(),
+  );
+  const [dateInput, setDateInput] = useState<string>(() =>
+    formatDateForInput(editingTransaction ? editingTransaction.date : getTodayISO()),
   );
   const [notes, setNotes] = useState<string>(
     editingTransaction?.notes || '',
@@ -129,6 +157,10 @@ export function TransactionForm({
       if (type === 'EXPENSE' && !categoryId) {
         throw new Error('Selecione uma categoria para a despesa.');
       }
+      const normalizedDate = parseBrazilianDate(dateInput);
+      if (!normalizedDate) {
+        throw new Error('Informe uma data válida no formato DD/MM/AAAA.');
+      }
 
       if (editingTransaction) {
         return updateTransaction({
@@ -137,7 +169,7 @@ export function TransactionForm({
             type,
             description: description.trim(),
             amountInCents: parsedCents,
-            date,
+            date: normalizedDate,
             categoryId: categoryId || null,
             notes: notes.trim() || null,
           },
@@ -149,7 +181,7 @@ export function TransactionForm({
           type,
           description: description.trim(),
           amountInCents: parsedCents,
-          date,
+          date: normalizedDate,
           categoryId: categoryId || null,
           notes: notes.trim() || null,
         },
@@ -195,7 +227,9 @@ export function TransactionForm({
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
-    setDate(`${yyyy}-${mm}-${dd}`);
+    const isoDate = `${yyyy}-${mm}-${dd}`;
+    setDate(isoDate);
+    setDateInput(formatDateForInput(isoDate));
   };
 
   const todayISO = getTodayISO();
@@ -443,9 +477,18 @@ export function TransactionForm({
           <div className="relative">
             <input
               id="tx-date-input"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="DD/MM/AAAA"
+              maxLength={10}
+              value={dateInput}
+              onChange={(e) => {
+                const formattedDate = formatDateDigits(e.target.value);
+                setDateInput(formattedDate);
+                const parsedDate = parseBrazilianDate(formattedDate);
+                if (parsedDate) setDate(parsedDate);
+              }}
               required
               className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-sm font-mono-tabular text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-600 dark:focus:ring-amber-400"
             />

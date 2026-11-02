@@ -5,6 +5,7 @@ import {
   Scale,
   TrendingDown,
   TrendingUp,
+  WalletCards,
 } from 'lucide-react';
 import type { DashboardData } from '#/domains/dashboard/calculations.ts';
 import {
@@ -27,9 +28,9 @@ export function KpiCards({ data }: KpiCardsProps) {
   const isBelowAverage = cards.expenseVsAverageDiffInCents < 0;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
       {/* 1. Saldo do Período */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
+      <div className="min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-zinc-400">
             <span className="font-medium">Saldo do período</span>
@@ -85,8 +86,34 @@ export function KpiCards({ data }: KpiCardsProps) {
         </div>
       </div>
 
+      {/* Saldo total de todas as transações */}
+      <div className="min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
+        <div>
+          <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-zinc-400">
+            <span className="font-medium">Saldo total</span>
+            <WalletCards className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+          </div>
+
+          <p
+            className={`mt-2 text-2xl sm:text-[26px] font-bold font-mono-tabular tracking-tight ${
+              cards.totalBalanceStatus === 'POSITIVE'
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : cards.totalBalanceStatus === 'NEGATIVE'
+                  ? 'text-red-600 dark:text-red-400'
+                  : 'text-slate-900 dark:text-white'
+            }`}
+          >
+            {formatCurrencyFromCents(cards.totalBalanceInCents)}
+          </p>
+        </div>
+
+        <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-zinc-800/80 text-xs text-slate-500 dark:text-zinc-400">
+          Todas as transações
+        </div>
+      </div>
+
       {/* 2. Total de Receitas */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
+      <div className="min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-zinc-400">
             <span className="font-medium">Total de receitas</span>
@@ -121,7 +148,7 @@ export function KpiCards({ data }: KpiCardsProps) {
       </div>
 
       {/* 3. Total de Despesas (Gastar mais = Negativo/Vermelho; Gastar menos = Positivo/Verde) */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
+      <div className="min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-zinc-400">
             <span className="font-medium">Total de despesas</span>
@@ -156,7 +183,7 @@ export function KpiCards({ data }: KpiCardsProps) {
       </div>
 
       {/* 4. Variação dos Gastos */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
+      <div className="min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-zinc-400">
             <span className="font-medium">Variação dos gastos</span>
@@ -198,7 +225,7 @@ export function KpiCards({ data }: KpiCardsProps) {
       </div>
 
       {/* 5. Média de Gastos */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
+      <div className="min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-zinc-400">
             <span className="font-medium">Média de gastos</span>
