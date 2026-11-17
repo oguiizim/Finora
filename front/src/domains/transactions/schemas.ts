@@ -29,12 +29,6 @@ export const baseTransactionSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida. Utilize o formato AAAA-MM-DD.'),
   categoryId: z.string().trim().nullable().optional(),
-  notes: z
-    .string()
-    .trim()
-    .max(500, 'A observação deve ter no máximo 500 caracteres.')
-    .nullable()
-    .optional(),
 });
 
 export const createTransactionSchema = baseTransactionSchema.superRefine(

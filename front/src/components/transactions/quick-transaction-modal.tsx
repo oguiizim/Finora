@@ -33,7 +33,7 @@ export function QuickTransactionModal() {
       />
 
       {/* Mobile Bottom Sheet / Desktop Dialog */}
-      <div className="relative z-10 w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl bg-white dark:bg-[#12141a] border-t sm:border border-slate-200 dark:border-zinc-800 p-5 sm:p-6 shadow-2xl">
+      <div className="transaction-modal-scroll relative z-10 w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl bg-white dark:bg-[#12141a] border-t sm:border border-slate-200 dark:border-zinc-800 p-5 sm:p-6 shadow-2xl">
         {/* Mobile grab handle */}
         <div className="w-10 h-1.5 bg-slate-300 dark:bg-zinc-700 rounded-full mx-auto mb-3 sm:hidden" />
 

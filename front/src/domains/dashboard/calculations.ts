@@ -90,6 +90,10 @@ export interface CategoryWeeklyAnalysis {
   categoryName: string;
   color: string;
   totalExpenseInCents: number;
+  currentWeekStartDate: string;
+  currentWeekEndDate: string;
+  currentWeekIncomeInCents: number;
+  currentWeekExpenseInCents: number;
   weeklyPoints: WeeklyHistoryPoint[];
   dailyPoints: CategoryDailyPoint[];
 }
@@ -131,7 +135,6 @@ export interface DashboardData {
   };
   monthlyChart: {
     points: MonthlyEvolutionPoint[];
-    sixMonthAverageExpenseInCents: number;
   };
   categoryWeeklyAnalysis?: CategoryWeeklyAnalysis;
   categoryBreakdown: CategoryBreakdownItem[];
@@ -702,20 +705,15 @@ export function buildDashboardAnalytics(params: {
     });
   }
 
-  const sixMonthAverageExpenseInCents =
-    monthlyPoints.length > 0
-      ? Math.round(
-          monthlyPoints.reduce((acc, m) => acc + m.expenseInCents, 0) /
-            monthlyPoints.length,
-        )
-      : 0;
-
   let categoryWeeklyAnalysis: CategoryWeeklyAnalysis | undefined;
   if (categoryId) {
-    const categoryTransactions = allTransactions.filter(
+    const categoryTransactionsForAllTypes = allTransactions.filter(
       (transaction) =>
-        transaction.type === 'EXPENSE' &&
         (transaction.categoryId || 'uncategorized') === categoryId,
+    );
+    const categoryTransactions = categoryTransactionsForAllTypes.filter(
+      (transaction) =>
+        transaction.type === 'EXPENSE',
     );
     const categorySample = categoryTransactions[0];
     const categoryPeriodTransactions = categoryTransactions.filter(
@@ -745,9 +743,22 @@ export function buildDashboardAnalytics(params: {
     const chartEndDay = chartEnd.getDay();
     const latestMonday = addDays(chartEnd, chartEndDay === 0 ? -6 : 1 - chartEndDay);
     const weeklyPoints: WeeklyHistoryPoint[] = [];
+    const currentWeekStartDate = toISODate(currentWeekMonday);
+    const currentWeekEndDate = toISODate(addDays(currentWeekMonday, 6));
+    const currentWeekCategoryTransactions = categoryTransactionsForAllTypes.filter(
+      (transaction) =>
+        transaction.date >= currentWeekStartDate &&
+        transaction.date <= currentWeekEndDate,
+    );
+    const currentWeekIncomeInCents = currentWeekCategoryTransactions
+      .filter((transaction) => transaction.type === 'INCOME')
+      .reduce((sum, transaction) => sum + transaction.amountInCents, 0);
+    const currentWeekExpenseInCents = currentWeekCategoryTransactions
+      .filter((transaction) => transaction.type === 'EXPENSE')
+      .reduce((sum, transaction) => sum + transaction.amountInCents, 0);
 
-    for (let weekOffset = 3; weekOffset >= 0; weekOffset--) {
-      const start = addDays(latestMonday, -weekOffset * 7);
+    for (let weekIndex = 0; weekIndex < 4; weekIndex++) {
+      const start = addDays(latestMonday, (weekIndex - 3) * 7);
       const end = addDays(start, 6);
       const startDate = toISODate(start);
       const endDate = toISODate(end);
@@ -766,9 +777,10 @@ export function buildDashboardAnalytics(params: {
         startDate,
         endDate,
         expenseInCents,
-        isCurrentWeek: weekOffset === 0,
+        isCurrentWeek: weekIndex === 3,
       });
     }
+    weeklyPoints.sort((a, b) => a.startDate.localeCompare(b.startDate));
 
     categoryWeeklyAnalysis = {
       categoryId,
@@ -776,6 +788,10 @@ export function buildDashboardAnalytics(params: {
       color: categorySample?.categoryColor || selectedCategoryColor || '#16a34a',
       totalExpenseInCents: categoryPeriodTransactions
         .reduce((sum, transaction) => sum + transaction.amountInCents, 0),
+      currentWeekStartDate,
+      currentWeekEndDate,
+      currentWeekIncomeInCents,
+      currentWeekExpenseInCents,
       weeklyPoints,
       dailyPoints,
     };
@@ -818,7 +834,6 @@ export function buildDashboardAnalytics(params: {
     },
     monthlyChart: {
       points: monthlyPoints,
-      sixMonthAverageExpenseInCents,
     },
     categoryWeeklyAnalysis,
     categoryBreakdown,
