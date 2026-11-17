@@ -258,6 +258,16 @@ export function MonthlyEvolutionChart({
   const isDark = resolvedTheme === 'dark';
   const gridColor = isDark ? '#27272a' : '#f1f5f9';
   const axisTextColor = isDark ? '#a1a1aa' : '#64748b';
+  const visibleMonthlyPoints = monthlyChart.points.slice(-monthsInterval);
+  const averageExpenseInCents =
+    visibleMonthlyPoints.length > 0
+      ? Math.round(
+          visibleMonthlyPoints.reduce(
+            (total, point) => total + point.expenseInCents,
+            0,
+          ) / visibleMonthlyPoints.length,
+        )
+      : 0;
 
   if (categoryWeeklyAnalysis) {
     const { categoryName, color, dailyPoints, totalExpenseInCents } = categoryWeeklyAnalysis;
@@ -312,9 +322,7 @@ export function MonthlyEvolutionChart({
             <span aria-hidden="true">·</span>
             <span className="font-mono-tabular">
               Média:{' '}
-              {formatCurrencyFromCents(
-                monthlyChart.sixMonthAverageExpenseInCents,
-              )}
+              {formatCurrencyFromCents(averageExpenseInCents)}
             </span>
           </div>
         </div>
@@ -340,7 +348,7 @@ export function MonthlyEvolutionChart({
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={monthlyChart.points}
+            data={visibleMonthlyPoints}
             margin={{ top: 8, right: 8, left: -12, bottom: 0 }}
           >
             <CartesianGrid
@@ -392,9 +400,9 @@ export function MonthlyEvolutionChart({
                 );
               }}
             />
-            {monthlyChart.sixMonthAverageExpenseInCents > 0 && (
+            {averageExpenseInCents > 0 && (
               <ReferenceLine
-                y={monthlyChart.sixMonthAverageExpenseInCents}
+                y={averageExpenseInCents}
                 stroke={isDark ? '#facc15' : '#0f172a'}
                 strokeDasharray="4 4"
               />
@@ -426,6 +434,9 @@ export function CategoryWeeklyBreakdownSection({
   analysis: NonNullable<DashboardData['categoryWeeklyAnalysis']>;
 }) {
   const { weeklyPoints, categoryName, color, totalExpenseInCents } = analysis;
+  const orderedWeeklyPoints = [...weeklyPoints].sort((a, b) =>
+    Number(a.startDate.slice(-2)) - Number(b.startDate.slice(-2)),
+  );
   const pieColors = [color, `${color}cc`, `${color}99`, `${color}66`];
 
   return (
@@ -438,24 +449,36 @@ export function CategoryWeeklyBreakdownSection({
         <span className="text-xs font-mono-tabular font-semibold text-slate-900 dark:text-zinc-100">Gasto total: {formatCurrencyFromCents(totalExpenseInCents)}</span>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-        <div className="lg:col-span-4 h-52 relative flex items-center justify-center">
+        <div className="lg:col-span-4 h-52 relative z-20 flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={weeklyPoints} dataKey="expenseInCents" nameKey="weekLabel" innerRadius={56} outerRadius={82} paddingAngle={2} stroke="none">
-                {weeklyPoints.map((point, index) => <Cell key={point.startDate} fill={pieColors[index]} />)}
+              <Pie data={orderedWeeklyPoints} dataKey="expenseInCents" nameKey="weekLabel" innerRadius={56} outerRadius={82} paddingAngle={2} stroke="none">
+                {orderedWeeklyPoints.map((point, index) => <Cell key={point.startDate} fill={pieColors[index]} />)}
               </Pie>
-              <Tooltip content={({ active, payload }) => {
-                if (!active || !payload || payload.length === 0) return null;
-                const item = payload[0]?.payload as NonNullable<DashboardData['categoryWeeklyAnalysis']>['weeklyPoints'][number] | undefined;
-                if (!item) return null;
-                return <div className="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg text-xs"><p className="font-semibold text-slate-900 dark:text-white">{item.weekLabel}</p><p className="font-mono-tabular mt-0.5" style={{ color: pieColors[weeklyPoints.findIndex((point) => point.startDate === item.startDate)] }}>{formatCurrencyFromCents(item.expenseInCents)}</p></div>;
-              }} />
+              <Tooltip
+                wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
+                content={({ active, payload }) => {
+                  if (!active || !payload || payload.length === 0) return null;
+                  const item = payload[0]?.payload as typeof orderedWeeklyPoints[number] | undefined;
+                  if (!item) return null;
+                  const colorIndex = orderedWeeklyPoints.findIndex((point) => point.startDate === item.startDate);
+                  return (
+                    <div className="rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg px-3 py-2 text-xs">
+                      <p className="font-semibold text-slate-900 dark:text-white">{item.weekLabel}</p>
+                      <p className="font-mono-tabular mt-0.5" style={{ color: pieColors[colorIndex] }}>{formatCurrencyFromCents(item.expenseInCents)}</p>
+                    </div>
+                  );
+                }}
+              />
             </PieChart>
           </ResponsiveContainer>
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center"><span className="text-[11px] text-slate-400 dark:text-zinc-500">Total no período</span><span className="text-xs font-mono-tabular font-bold text-slate-900 dark:text-white mt-1">{formatCurrencyFromCents(totalExpenseInCents)}</span></div>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-14">
+            <span className="text-[11px] text-slate-400 dark:text-zinc-500">Total no período</span>
+            <span className="text-xs font-mono-tabular font-bold text-slate-900 dark:text-white mt-1">{formatCurrencyFromCents(totalExpenseInCents)}</span>
+          </div>
         </div>
         <div className="lg:col-span-8 space-y-3.5">
-          {weeklyPoints.map((point, index) => {
+          {orderedWeeklyPoints.map((point, index) => {
             const share = totalExpenseInCents > 0 ? (point.expenseInCents / totalExpenseInCents) * 100 : 0;
             return <div key={point.startDate} className="space-y-1.5">
               <div className="flex items-center justify-between gap-3 text-xs">
@@ -516,7 +539,7 @@ export function CategoryBreakdownSection({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
         {/* Donut Chart */}
-        <div className="lg:col-span-4 h-52 relative flex items-center justify-center">
+        <div className="lg:col-span-4 h-52 relative z-20 flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -533,6 +556,7 @@ export function CategoryBreakdownSection({
                 ))}
               </Pie>
               <Tooltip
+                wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
                 content={({ active, payload }) => {
                   if (!active || !payload || payload.length === 0) return null;
                   const item = payload[0]?.payload as
@@ -540,7 +564,7 @@ export function CategoryBreakdownSection({
                     | undefined;
                   if (!item) return null;
                   return (
-                    <div className="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg text-xs">
+                    <div className="rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg px-3 py-2 text-xs">
                       <p className="font-semibold text-slate-900 dark:text-white">
                         {item.categoryName}
                       </p>

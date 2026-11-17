@@ -20,6 +20,11 @@ interface KpiCardsProps {
 
 export function KpiCards({ data }: KpiCardsProps) {
   const { cards, periodRange } = data;
+  const categoryWeeklyAnalysis = data.categoryWeeklyAnalysis;
+  const currentWeekBalanceInCents = categoryWeeklyAnalysis
+    ? categoryWeeklyAnalysis.currentWeekIncomeInCents -
+      categoryWeeklyAnalysis.currentWeekExpenseInCents
+    : 0;
 
   const isExpenseHigher = cards.expenseDiffInCents > 0;
   const isExpenseLower = cards.expenseDiffInCents < 0;
@@ -112,8 +117,48 @@ export function KpiCards({ data }: KpiCardsProps) {
         </div>
       </div>
 
+      {categoryWeeklyAnalysis && (
+        <div className="min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-zinc-400">
+              <span className="font-medium">Saldo da semana</span>
+              <Scale className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+            </div>
+            <p
+              className={`mt-2 text-2xl sm:text-[26px] font-bold font-mono-tabular tracking-tight ${
+                currentWeekBalanceInCents > 0
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : currentWeekBalanceInCents < 0
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-slate-900 dark:text-white'
+              }`}
+            >
+              {formatCurrencyFromCents(currentWeekBalanceInCents)}
+            </p>
+          </div>
+          <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-zinc-800/80 space-y-1 text-xs">
+            <div className="flex items-center justify-between gap-2 text-emerald-600 dark:text-emerald-400">
+              <span>Receitas</span>
+              <span className="font-mono-tabular">
+                {formatCurrencyFromCents(categoryWeeklyAnalysis.currentWeekIncomeInCents)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-2 text-red-600 dark:text-red-400">
+              <span>Despesas</span>
+              <span className="font-mono-tabular">
+                {formatCurrencyFromCents(categoryWeeklyAnalysis.currentWeekExpenseInCents)}
+              </span>
+            </div>
+            <p className="pt-1 text-slate-500 dark:text-zinc-400">
+              {formatDateBR(categoryWeeklyAnalysis.currentWeekStartDate)} a{' '}
+              {formatDateBR(categoryWeeklyAnalysis.currentWeekEndDate)}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 2. Total de Receitas */}
-      <div className="min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
+      <div className={`${categoryWeeklyAnalysis ? 'hidden' : ''} min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between`}>
         <div>
           <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-zinc-400">
             <span className="font-medium">Total de receitas</span>
@@ -148,7 +193,7 @@ export function KpiCards({ data }: KpiCardsProps) {
       </div>
 
       {/* 3. Total de Despesas (Gastar mais = Negativo/Vermelho; Gastar menos = Positivo/Verde) */}
-      <div className="min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
+      <div className={`${categoryWeeklyAnalysis ? 'hidden' : ''} min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between`}>
         <div>
           <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-zinc-400">
             <span className="font-medium">Total de despesas</span>
@@ -183,7 +228,7 @@ export function KpiCards({ data }: KpiCardsProps) {
       </div>
 
       {/* 4. Variação dos Gastos */}
-      <div className="min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
+      <div className={`${categoryWeeklyAnalysis ? 'hidden' : ''} min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between`}>
         <div>
           <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-zinc-400">
             <span className="font-medium">Variação dos gastos</span>
@@ -225,7 +270,7 @@ export function KpiCards({ data }: KpiCardsProps) {
       </div>
 
       {/* 5. Média de Gastos */}
-      <div className="min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between">
+      <div className={`${categoryWeeklyAnalysis ? 'hidden' : ''} min-w-0 p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141a] border border-slate-200/90 dark:border-zinc-800/90 flex flex-col justify-between`}>
         <div>
           <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-zinc-400">
             <span className="font-medium">Média de gastos</span>

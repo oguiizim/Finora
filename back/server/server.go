@@ -110,7 +110,7 @@ func corsMiddleware() gin.HandlerFunc {
 func allowedOrigins() map[string]bool {
 	origins := map[string]bool{"http://localhost:3000": true}
 	for _, origin := range strings.Split(os.Getenv("FRONTEND_ORIGINS"), ",") {
-		if origin = strings.TrimSpace(origin); origin != "" {
+		if origin = strings.TrimRight(strings.TrimSpace(origin), "/"); origin != "" {
 			origins[origin] = true
 		}
 	}

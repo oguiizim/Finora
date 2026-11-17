@@ -89,9 +89,6 @@ export function TransactionForm({
   const [dateInput, setDateInput] = useState<string>(() =>
     formatDateForInput(editingTransaction ? editingTransaction.date : getTodayISO()),
   );
-  const [notes, setNotes] = useState<string>(
-    editingTransaction?.notes || '',
-  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { data: allCategories = [], isLoading: isLoadingCategories } = useQuery({
@@ -110,18 +107,15 @@ export function TransactionForm({
     });
   }, [allCategories, type, editingTransaction]);
 
-  // Auto-select first matching category for expenses when none is chosen
   useEffect(() => {
-    if (type === 'EXPENSE' && !categoryId && availableCategories.length > 0) {
-      setCategoryId(availableCategories[0].id);
-    } else if (
+    if (
       categoryId &&
       availableCategories.length > 0 &&
       !availableCategories.some((c) => c.id === categoryId)
     ) {
-      setCategoryId(type === 'EXPENSE' ? availableCategories[0].id : '');
+      setCategoryId('');
     }
-  }, [type, availableCategories, categoryId]);
+  }, [availableCategories, categoryId]);
 
   useEffect(() => {
     if (autoFocusAmount && amountInputRef.current) {
@@ -171,7 +165,6 @@ export function TransactionForm({
             amountInCents: parsedCents,
             date: normalizedDate,
             categoryId: categoryId || null,
-            notes: notes.trim() || null,
           },
         });
       }
@@ -183,7 +176,6 @@ export function TransactionForm({
           amountInCents: parsedCents,
           date: normalizedDate,
           categoryId: categoryId || null,
-          notes: notes.trim() || null,
         },
       });
     },
@@ -439,8 +431,8 @@ export function TransactionForm({
         )}
       </div>
 
-      {/* Date & Optional Notes */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Date */}
+      <div className="grid grid-cols-1 gap-3">
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label
@@ -495,22 +487,6 @@ export function TransactionForm({
           </div>
         </div>
 
-        <div>
-          <label
-            htmlFor="tx-notes-input"
-            className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1.5"
-          >
-            Observação (opcional)
-          </label>
-          <input
-            id="tx-notes-input"
-            type="text"
-            placeholder="Detalhes adicionais..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-600 dark:focus:ring-amber-400"
-          />
-        </div>
       </div>
 
       {/* Action Buttons */}
