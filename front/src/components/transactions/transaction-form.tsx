@@ -13,8 +13,8 @@ import {
 import type { TransactionWithCategory } from '#/domains/transactions/queries.ts';
 import {
   centsToDecimalInput,
+  evaluateCurrencyExpressionToCents,
   formatCurrencyFromCents,
-  parseCurrencyInputToCents,
 } from '#/lib/formatters/index.ts';
 import { getTodayISO } from '#/lib/utils/index.ts';
 
@@ -28,7 +28,6 @@ interface TransactionFormProps {
 
 const QUICK_AMOUNTS_CENTS = [
   { label: '+R$ 15', cents: 1500 },
-  { label: '+R$ 30', cents: 3000 },
   { label: '+R$ 50', cents: 5000 },
   { label: '+R$ 100', cents: 10000 },
 ];
@@ -150,7 +149,7 @@ export function TransactionForm({
   }, [autoFocusAmount]);
 
   const parsedCents = useMemo(
-    () => parseCurrencyInputToCents(amountRaw),
+    () => evaluateCurrencyExpressionToCents(amountRaw),
     [amountRaw],
   );
 
@@ -165,6 +164,9 @@ export function TransactionForm({
   const saveMutation = useMutation({
     mutationFn: async () => {
       setErrorMessage(null);
+      if (parsedCents === null) {
+        throw new Error('Informe uma operação matemática válida.');
+      }
       if (parsedCents <= 0) {
         throw new Error('Informe um valor maior que R$ 0,00.');
       }
@@ -213,8 +215,8 @@ export function TransactionForm({
         editingTransaction
           ? 'Lançamento atualizado com sucesso!'
           : type === 'EXPENSE'
-            ? `Gasto de ${formatCurrencyFromCents(parsedCents)} registrado!`
-            : `Receita de ${formatCurrencyFromCents(parsedCents)} registrada!`,
+            ? `Gasto de ${formatCurrencyFromCents(parsedCents ?? 0)} registrado!`
+            : `Receita de ${formatCurrencyFromCents(parsedCents ?? 0)} registrada!`,
         'success',
       );
 
@@ -231,7 +233,7 @@ export function TransactionForm({
   });
 
   const handleQuickAddCents = (centsToAdd: number) => {
-    const nextCents = parsedCents + centsToAdd;
+    const nextCents = (parsedCents ?? 0) + centsToAdd;
     setAmountRaw(centsToDecimalInput(nextCents));
   };
 
@@ -305,7 +307,7 @@ export function TransactionForm({
             Valor do lançamento
           </label>
           <span className="text-xs font-mono-tabular text-slate-500 dark:text-zinc-400">
-            {parsedCents > 0
+            {parsedCents !== null && parsedCents > 0
               ? formatCurrencyFromCents(parsedCents)
               : 'R$ 0,00'}
           </span>
@@ -325,8 +327,8 @@ export function TransactionForm({
             ref={amountInputRef}
             id="tx-amount-input"
             type="text"
-            inputMode="decimal"
-            placeholder="0,00"
+            inputMode="text"
+            placeholder="10,00"
             value={amountRaw}
             onChange={(e) => setAmountRaw(e.target.value)}
             required
@@ -346,7 +348,7 @@ export function TransactionForm({
               {chip.label}
             </button>
           ))}
-          {parsedCents > 0 && (
+          {parsedCents !== null && parsedCents > 0 && (
             <button
               type="button"
               onClick={() => setAmountRaw('')}
