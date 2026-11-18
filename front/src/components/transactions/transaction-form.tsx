@@ -342,6 +342,7 @@ export function TransactionForm({
             <button
               key={chip.label}
               type="button"
+              tabIndex={-1}
               onClick={() => handleQuickAddCents(chip.cents)}
               className="px-2.5 py-1.5 rounded-lg text-xs font-mono-tabular font-medium bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 hover:border-emerald-500 dark:hover:border-amber-400/60 active:scale-95 transition-all whitespace-nowrap"
             >
