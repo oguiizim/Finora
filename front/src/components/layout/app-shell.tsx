@@ -1,7 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   FolderKanban,
   LayoutDashboard,
   ListOrdered,
@@ -30,8 +28,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navItems = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },
     { to: "/lancamentos", label: "Lançamentos", icon: ListOrdered },
-    { to: "/novo-gasto", label: "Novo gasto", icon: ArrowDownRight },
-    { to: "/nova-receita", label: "Nova receita", icon: ArrowUpRight },
     { to: "/categorias", label: "Categorias", icon: FolderKanban },
     { to: "/configuracoes", label: "Configurações", icon: Settings },
   ] as const;
@@ -97,8 +93,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Theme Switcher Footer */}
         <div className="p-4 border-t border-slate-200/80 dark:border-zinc-800/80">
           <div className="mb-3 flex items-center justify-between gap-2 px-1">
-            <span className="truncate text-xs font-semibold text-slate-700 dark:text-zinc-200">{session?.user.name}</span>
-            <button type="button" onClick={() => void signOut()} title="Sair" aria-label="Sair" className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-red-600 dark:hover:bg-zinc-900"><LogOut className="size-4" /></button>
+            <span className="truncate text-xs font-semibold text-slate-700 dark:text-zinc-200">
+              {session?.user.name}
+            </span>
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              title="Sair"
+              aria-label="Sair"
+              className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-red-600 dark:hover:bg-zinc-900"
+            >
+              <LogOut className="size-4" />
+            </button>
           </div>
           <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
             <button
@@ -200,7 +206,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page Viewport */}
-        <main className={`flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 pb-24 md:pb-10 ${currentPath === "/" ? "dashboard-scrollbar-hidden" : ""}`}>
+        <main
+          className={`flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 pb-24 md:pb-10 ${currentPath === "/" ? "dashboard-scrollbar-hidden" : ""}`}
+        >
           {children}
         </main>
       </div>
@@ -235,7 +243,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="text-[10px] tracking-tight">Extrato</span>
           </Link>
 
-          {/* Central Primary Quick-Add Expense Button */}
           <div className="flex items-center justify-center">
             <button
               type="button"

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowDownRight, ArrowUpRight, Check, Loader2 } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Check, ChevronDown, Loader2 } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CategoryIcon } from '#/components/ui/category-icon.tsx';
@@ -68,6 +68,7 @@ export function TransactionForm({
   const queryClient = useQueryClient();
   const { showToast } = useAppUI();
   const amountInputRef = useRef<HTMLInputElement | null>(null);
+  const categoryMenuRef = useRef<HTMLDivElement | null>(null);
 
   const [type, setType] = useState<'EXPENSE' | 'INCOME'>(
     editingTransaction ? editingTransaction.type : defaultType,
@@ -90,6 +91,7 @@ export function TransactionForm({
     formatDateForInput(editingTransaction ? editingTransaction.date : getTodayISO()),
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
 
   const { data: allCategories = [], isLoading: isLoadingCategories } = useQuery({
     queryKey: ['categories', { includeArchived: true }],
@@ -106,6 +108,7 @@ export function TransactionForm({
       return editingTransaction?.categoryId === cat.id;
     });
   }, [allCategories, type, editingTransaction]);
+  const selectedCategory = availableCategories.find((cat) => cat.id === categoryId);
 
   useEffect(() => {
     if (
@@ -116,6 +119,26 @@ export function TransactionForm({
       setCategoryId('');
     }
   }, [availableCategories, categoryId]);
+
+  useEffect(() => {
+    if (!isCategoryMenuOpen) return;
+
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (event.target instanceof Node && !categoryMenuRef.current?.contains(event.target)) {
+        setIsCategoryMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsCategoryMenuOpen(false);
+    };
+
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isCategoryMenuOpen]);
 
   useEffect(() => {
     if (autoFocusAmount && amountInputRef.current) {
@@ -198,7 +221,6 @@ export function TransactionForm({
       if (!editingTransaction) {
         setAmountRaw('');
         setDescription('');
-        setNotes('');
       }
 
       onSuccess?.();
@@ -361,23 +383,14 @@ export function TransactionForm({
         />
       </div>
 
-      {/* One-Tap Category Grid */}
+      {/* Category selector */}
       <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-xs font-medium text-slate-700 dark:text-zinc-300">
-            Categoria {type === 'INCOME' && '(opcional)'}
-          </span>
-        </div>
+        <label className="mb-1.5 block text-xs font-medium text-slate-700 dark:text-zinc-300">
+            Categoria
+        </label>
 
         {isLoadingCategories ? (
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <div
-                key={n}
-                className="h-12 rounded-xl bg-slate-100 dark:bg-zinc-900 animate-pulse"
-              />
-            ))}
-          </div>
+          <div className="h-11 rounded-xl bg-slate-100 dark:bg-zinc-900 animate-pulse" />
         ) : availableCategories.length === 0 ? (
           <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/70 border border-slate-200 dark:border-zinc-800 flex items-center justify-between gap-3">
             <span className="text-xs text-slate-500 dark:text-zinc-400">
@@ -393,40 +406,50 @@ export function TransactionForm({
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-0.5">
-            {availableCategories.map((cat) => {
-              const isSelected = categoryId === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() =>
-                    setCategoryId(
-                      type === 'INCOME' && isSelected ? '' : cat.id,
-                    )
-                  }
-                  className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl border text-left text-xs font-medium transition-all ${
-                    isSelected
-                      ? 'bg-emerald-600/10 border-emerald-600 text-slate-900 dark:bg-amber-400/15 dark:border-amber-400 dark:text-white shadow-2xs'
-                      : 'bg-white dark:bg-zinc-900/70 border-slate-200 dark:border-zinc-800/90 text-slate-700 dark:text-zinc-300 hover:border-slate-300 dark:hover:border-zinc-700'
-                  }`}
-                >
-                  <span
-                    className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
-                    style={{
-                      backgroundColor: `${cat.color || '#eab308'}22`,
-                      color: cat.color || '#eab308',
-                    }}
-                  >
-                    <CategoryIcon name={cat.icon} className="w-3.5 h-3.5" />
-                  </span>
-                  <span className="truncate flex-1">{cat.name}</span>
-                  {isSelected && (
-                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-amber-400 shrink-0" />
-                  )}
-                </button>
-              );
-            })}
+          <div className="relative" ref={categoryMenuRef}>
+            <button
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={isCategoryMenuOpen}
+              aria-controls="transaction-form-category-options"
+              onClick={() => setIsCategoryMenuOpen((open) => !open)}
+              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 text-left text-sm text-slate-900 transition-colors hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-amber-400/60 dark:focus:ring-amber-400"
+            >
+              <span className="flex min-w-0 items-center gap-2.5">
+                {selectedCategory ? (
+                  <>
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md" style={{ backgroundColor: `${selectedCategory.color}20`, color: selectedCategory.color }}>
+                      <CategoryIcon name={selectedCategory.icon} className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="truncate">{selectedCategory.name}</span>
+                  </>
+                ) : (
+                  <span className="text-slate-500 dark:text-zinc-400">Selecione uma categoria</span>
+                )}
+              </span>
+              <ChevronDown aria-hidden="true" className={`h-4 w-4 shrink-0 text-slate-500 transition-transform dark:text-zinc-400 ${isCategoryMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isCategoryMenuOpen && (
+              <div id="transaction-form-category-options" role="listbox" aria-label="Categoria da transação" className="absolute z-30 mt-2 max-h-64 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-[#181a20]">
+                {type === 'INCOME' && (
+                  <button type="button" role="option" aria-selected={!categoryId} onClick={() => { setCategoryId(''); setIsCategoryMenuOpen(false); }} className={`flex min-h-10 w-full items-center rounded-lg px-2.5 text-left text-sm transition-colors ${!categoryId ? 'bg-emerald-50 font-semibold text-emerald-800 dark:bg-amber-400/10 dark:text-amber-300' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white'}`}>
+                    Sem categoria
+                  </button>
+                )}
+                {availableCategories.map((cat) => {
+                  const isSelected = categoryId === cat.id;
+                  return (
+                    <button key={cat.id} type="button" role="option" aria-selected={isSelected} onClick={() => { setCategoryId(cat.id); setIsCategoryMenuOpen(false); }} className={`flex min-h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-sm transition-colors ${isSelected ? 'bg-emerald-50 font-semibold text-emerald-800 dark:bg-amber-400/10 dark:text-amber-300' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white'}`}>
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md" style={{ backgroundColor: `${cat.color}20`, color: cat.color }}>
+                        <CategoryIcon name={cat.icon} className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="truncate">{cat.name}</span>
+                      {isSelected && <Check className="ml-auto h-4 w-4 shrink-0 text-emerald-600 dark:text-amber-400" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
