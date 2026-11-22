@@ -3,6 +3,8 @@ import {
   FolderKanban,
   LayoutDashboard,
   ListOrdered,
+  Repeat2,
+  ChartNoAxesCombined,
   LogOut,
   Monitor,
   Moon,
@@ -24,16 +26,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMobileSidebarClosing, setIsMobileSidebarClosing] = useState(false);
 
   const navItems = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },
     { to: "/lancamentos", label: "Lançamentos", icon: ListOrdered },
     { to: "/categorias", label: "Categorias", icon: FolderKanban },
+    { to: "/recorrentes", label: "Recorrentes", icon: Repeat2 },
+    { to: "/simulacao", label: "Planejamento", icon: ChartNoAxesCombined },
     { to: "/configuracoes", label: "Configurações", icon: Settings },
   ] as const;
 
   const toggleQuickTheme = () => {
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  };
+
+  const openMobileSidebar = () => {
+    setIsMobileSidebarClosing(false);
+    setIsMobileSidebarOpen(true);
+  };
+
+  const closeMobileSidebar = () => {
+    setIsMobileSidebarClosing(true);
+    window.setTimeout(() => {
+      setIsMobileSidebarOpen(false);
+      setIsMobileSidebarClosing(false);
+    }, 220);
   };
 
   return (
@@ -162,6 +181,100 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </button>
       )}
 
+      {isMobileSidebarOpen && (
+        <div
+          className={`mobile-sidebar-backdrop fixed inset-0 z-50 md:hidden ${
+            isMobileSidebarClosing ? "mobile-sidebar-backdrop--closing" : ""
+          }`}
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/55 backdrop-blur-[1px]"
+            onClick={closeMobileSidebar}
+            aria-label="Fechar menu lateral"
+          />
+          <aside
+            className={`mobile-sidebar-panel relative flex h-full w-[min(18rem,86vw)] flex-col border-r border-slate-200/90 bg-white shadow-2xl dark:border-zinc-800/90 dark:bg-[#101217] ${
+              isMobileSidebarClosing ? "mobile-sidebar-panel--closing" : ""
+            }`}
+          >
+            <div className="flex h-16 items-center justify-between border-b border-slate-200/80 px-5 dark:border-zinc-800/80">
+              <Link
+                to="/"
+                onClick={closeMobileSidebar}
+                className="flex items-center gap-2.5 text-lg font-bold tracking-tight text-slate-900 dark:text-white"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 font-mono-tabular text-sm font-bold text-white dark:bg-amber-400 dark:text-zinc-950">
+                  R$
+                </span>
+                <span>Finora</span>
+              </Link>
+              <button
+                type="button"
+                onClick={closeMobileSidebar}
+                className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white"
+                aria-label="Fechar menu lateral"
+              >
+                <PanelLeftClose className="size-4" />
+              </button>
+            </div>
+
+            <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Navegação principal">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive =
+                  item.to === "/"
+                    ? currentPath === "/"
+                    : currentPath.startsWith(item.to);
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={closeMobileSidebar}
+                    className={`flex min-h-12 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-emerald-600/10 font-semibold text-emerald-700 dark:bg-amber-400/15 dark:text-amber-300"
+                        : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-900/70 dark:hover:text-white"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="border-t border-slate-200/80 p-4 dark:border-zinc-800/80">
+              <div className="mb-3 flex items-center justify-between gap-2 px-1">
+                <span className="truncate text-xs font-semibold text-slate-700 dark:text-zinc-200">
+                  {session?.user.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void signOut()}
+                  title="Sair"
+                  aria-label="Sair"
+                  className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-red-600 dark:hover:bg-zinc-900"
+                >
+                  <LogOut className="size-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-zinc-800 dark:bg-zinc-900">
+                <button type="button" onClick={() => setTheme("light")} className={`min-h-10 rounded-lg text-xs font-medium ${theme === "light" ? "bg-white text-slate-900 shadow-2xs" : "text-slate-500 dark:text-zinc-400"}`}>
+                  Claro
+                </button>
+                <button type="button" onClick={() => setTheme("dark")} className={`min-h-10 rounded-lg text-xs font-medium ${theme === "dark" ? "bg-zinc-800 text-amber-300 shadow-2xs" : "text-slate-500 dark:text-zinc-400"}`}>
+                  Escuro
+                </button>
+                <button type="button" onClick={() => setTheme("system")} className={`min-h-10 rounded-lg text-xs font-medium ${theme === "system" ? "bg-white text-slate-900 shadow-2xs dark:bg-zinc-800 dark:text-white" : "text-slate-500 dark:text-zinc-400"}`}>
+                  Sistema
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
       {/* Main Content Area */}
       <div
         className={`flex-1 flex flex-col min-w-0 transition-[padding] duration-200 ease-out ${
@@ -170,15 +283,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         {/* Mobile Top App Bar (compact 54px, obeying 15% sticky cap) */}
         <header className="md:hidden sticky top-0 z-30 h-14 px-4 bg-white/90 dark:bg-[#101217]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-zinc-800/80 flex items-center justify-between">
-          <Link
-            to="/"
-            className="text-base font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2"
-          >
-            <span className="w-6 h-6 rounded-lg bg-emerald-600 dark:bg-amber-400 text-white dark:text-zinc-950 flex items-center justify-center font-mono-tabular font-bold text-xs">
-              R$
-            </span>
-            <span>Finora</span>
-          </Link>
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={openMobileSidebar}
+              className="flex min-h-[38px] min-w-[38px] items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+              aria-label="Abrir menu lateral"
+            >
+              <PanelLeftOpen className="h-4 w-4" />
+            </button>
+            <Link
+              to="/"
+              className="flex items-center gap-2 truncate text-base font-bold tracking-tight text-slate-900 dark:text-white"
+            >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-emerald-600 font-mono-tabular text-xs font-bold text-white dark:bg-amber-400 dark:text-zinc-950">
+                R$
+              </span>
+              <span>Finora</span>
+            </Link>
+          </div>
 
           <div className="flex items-center gap-2">
             <button
@@ -207,7 +330,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Page Viewport */}
         <main
-          className={`flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 pb-24 md:pb-10 ${currentPath === "/" ? "dashboard-scrollbar-hidden" : ""}`}
+          className={`flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 pb-8 md:pb-10 ${currentPath === "/" ? "dashboard-scrollbar-hidden" : ""}`}
         >
           {children}
         </main>
@@ -216,7 +339,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile Bottom Navigation Bar */}
       <nav
         aria-label="Navegação principal mobile"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#101217]/95 backdrop-blur-md border-t border-slate-200 dark:border-zinc-800 pb-safe"
+        className="hidden"
       >
         <div className="grid grid-cols-5 items-center h-16 px-1">
           <Link

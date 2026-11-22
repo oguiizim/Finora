@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -15,6 +14,7 @@ import (
 	"github.com/oguiizim/finora/auth"
 	"github.com/oguiizim/finora/category"
 	"github.com/oguiizim/finora/database"
+	"github.com/oguiizim/finora/recurring"
 	"github.com/oguiizim/finora/transaction"
 	"github.com/oguiizim/finora/user"
 )
@@ -48,20 +48,20 @@ func NewHandler() (http.Handler, error) {
 
 func connectDatabase() (*sql.DB, error) {
 	if os.Getenv("USE_CLOUD") == "true" {
-		if os.Getenv("DATABASE_URL") == "" || os.Getenv("DATABASE_AUTH_TOKEN") == "" {
-			return nil, errors.New("DATABASE_URL and DATABASE_AUTH_TOKEN are required when USE_CLOUD=true")
-		}
-		return database.NewCloudConnection()
+		db, _, err := database.New()
+		return db, err
 	}
 	if os.Getenv("VERCEL") == "1" {
-		return nil, errors.New("USE_CLOUD=true is required on Vercel; local SQLite storage is ephemeral")
+		return nil, fmt.Errorf("USE_CLOUD=true is required on Vercel; local SQLite storage is ephemeral")
 	}
-	return database.NewLocalConnection()
+	db, _, err := database.New()
+	return db, err
 }
 
 func registerRoutes(api *gin.RouterGroup, db *sql.DB, tokens *auth.TokenManager) {
 	categoryHandler := category.InitHandler(category.InitService(category.InitRepository(db)))
 	transactionHandler := transaction.InitHandler(transaction.InitService(transaction.InitRepository(db)))
+	recurringHandler := recurring.InitHandler(recurring.InitService(recurring.InitRepository(db)))
 	userHandler := user.InitHandler(user.InitService(user.InitRepository(db), tokens))
 
 	authRoutes := api.Group("/auth")
@@ -85,6 +85,14 @@ func registerRoutes(api *gin.RouterGroup, db *sql.DB, tokens *auth.TokenManager)
 	transactions.GET("/:id", transactionHandler.GetByID)
 	transactions.PUT("/:id", transactionHandler.Update)
 	transactions.DELETE("/:id", transactionHandler.Delete)
+
+	recurringExpenses := api.Group("/recurring-expense", auth.RequireAuthentication(tokens))
+	recurringExpenses.POST("/", recurringHandler.Create)
+	recurringExpenses.GET("/all", recurringHandler.List)
+	recurringExpenses.GET("/projection", recurringHandler.Projection)
+	recurringExpenses.POST("/simulate", recurringHandler.Simulate)
+	recurringExpenses.PUT("/:id", recurringHandler.Update)
+	recurringExpenses.DELETE("/:id", recurringHandler.Delete)
 
 	api.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"message": "Server is on!"}) })
 }

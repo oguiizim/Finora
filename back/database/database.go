@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -21,29 +22,57 @@ type Migration struct {
 	UpdatedAt time.Time
 }
 
-func NewCloudConnection() (*sql.DB, error) {
+// New opens the configured database. USE_CLOUD=false uses local SQLite; when it
+// is true, NODE=development selects DEV_* credentials and any other NODE value
+// selects PROD_* credentials.
+func New() (*sql.DB, string, error) {
 	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
-		log.Fatal(err)
+		return nil, "", err
 	}
-	dsn := os.Getenv("DATABASE_URL") + "?authToken=" + os.Getenv("DATABASE_AUTH_TOKEN")
-	driver := "libsql"
-	database, err := sql.Open(driver, dsn)
+	dsn, driver, err := GetDatabaseConfig()
 	if err != nil {
-		database.Close()
-		return nil, err
+		return nil, "", err
 	}
-	return database, nil
+	db, err := sql.Open(driver, dsn)
+	if err != nil {
+		return nil, dsn, err
+	}
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
+	if err := db.Ping(); err != nil {
+		db.Close()
+		return nil, dsn, err
+	}
+	return db, dsn, nil
 }
 
+func GetDatabaseConfig() (dsn, driver string, err error) {
+	if os.Getenv("USE_CLOUD") != "true" {
+		name := os.Getenv("DATABASE_NAME")
+		if name == "" {
+			name = "local.db"
+		}
+		return "file:" + name, "sqlite", nil
+	}
+	urlKey, tokenKey := "PROD_DATABASE_URL", "PROD_DATABASE_AUTH_TOKEN"
+	if os.Getenv("NODE") == "development" {
+		urlKey, tokenKey = "DEV_DATABASE_URL", "DEV_DATABASE_AUTH_TOKEN"
+	}
+	url, token := os.Getenv(urlKey), os.Getenv(tokenKey)
+	if url == "" || token == "" {
+		return "", "", errors.New(urlKey + " and " + tokenKey + " are required when USE_CLOUD=true")
+	}
+	return url + "?authToken=" + token, "libsql", nil
+}
+
+// Kept as compatibility helpers for callers that need an explicit target.
+func NewCloudConnection() (*sql.DB, error) { db, _, err := New(); return db, err }
 func NewLocalConnection() (*sql.DB, error) {
-	dsn := "file:local.db"
-	driver := "sqlite"
-	database, err := sql.Open(driver, dsn)
+	db, err := sql.Open("sqlite", "file:local.db")
 	if err != nil {
-		database.Close()
 		return nil, err
 	}
-	return database, nil
+	return db, nil
 }
 
 func SeedDatabase(db *sql.DB) {

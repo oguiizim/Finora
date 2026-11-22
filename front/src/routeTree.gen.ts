@@ -17,6 +17,8 @@ import { Route as LancamentosRouteImport } from './routes/lancamentos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as NovaReceitaRouteImport } from './routes/nova-receita'
 import { Route as NovoGastoRouteImport } from './routes/novo-gasto'
+import { Route as RecorrentesRouteImport } from './routes/recorrentes'
+import { Route as SimulacaoRouteImport } from './routes/simulacao'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +60,16 @@ const NovoGastoRoute = NovoGastoRouteImport.update({
   path: '/novo-gasto',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecorrentesRoute = RecorrentesRouteImport.update({
+  id: '/recorrentes',
+  path: '/recorrentes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SimulacaoRoute = SimulacaoRouteImport.update({
+  id: '/simulacao',
+  path: '/simulacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +80,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/nova-receita': typeof NovaReceitaRoute
   '/novo-gasto': typeof NovoGastoRoute
+  '/recorrentes': typeof RecorrentesRoute
+  '/simulacao': typeof SimulacaoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +92,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/nova-receita': typeof NovaReceitaRoute
   '/novo-gasto': typeof NovoGastoRoute
+  '/recorrentes': typeof RecorrentesRoute
+  '/simulacao': typeof SimulacaoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +105,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/nova-receita': typeof NovaReceitaRoute
   '/novo-gasto': typeof NovoGastoRoute
+  '/recorrentes': typeof RecorrentesRoute
+  '/simulacao': typeof SimulacaoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +119,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/nova-receita'
     | '/novo-gasto'
+    | '/recorrentes'
+    | '/simulacao'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +131,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/nova-receita'
     | '/novo-gasto'
+    | '/recorrentes'
+    | '/simulacao'
   id:
     | '__root__'
     | '/'
@@ -121,6 +143,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/nova-receita'
     | '/novo-gasto'
+    | '/recorrentes'
+    | '/simulacao'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,6 +156,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   NovaReceitaRoute: typeof NovaReceitaRoute
   NovoGastoRoute: typeof NovoGastoRoute
+  RecorrentesRoute: typeof RecorrentesRoute
+  SimulacaoRoute: typeof SimulacaoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,6 +218,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NovoGastoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/recorrentes': {
+      id: '/recorrentes'
+      path: '/recorrentes'
+      fullPath: '/recorrentes'
+      preLoaderRoute: typeof RecorrentesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/simulacao': {
+      id: '/simulacao'
+      path: '/simulacao'
+      fullPath: '/simulacao'
+      preLoaderRoute: typeof SimulacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -204,6 +244,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   NovaReceitaRoute: NovaReceitaRoute,
   NovoGastoRoute: NovoGastoRoute,
+  RecorrentesRoute: RecorrentesRoute,
+  SimulacaoRoute: SimulacaoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

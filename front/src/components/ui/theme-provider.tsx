@@ -13,6 +13,7 @@ interface ToastMessage {
   id: string;
   type: 'success' | 'error' | 'info';
   text: string;
+  isLeaving?: boolean;
 }
 
 interface QuickTransactionModalState {
@@ -111,15 +112,26 @@ export function AppUIProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) =>
+      prev.map((toast) =>
+        toast.id === id ? { ...toast, isLeaving: true } : toast,
+      ),
+    );
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, 220);
+  }, []);
+
   const showToast = useCallback(
     (text: string, type: 'success' | 'error' | 'info' = 'success') => {
       const id = `${Date.now()}-${Math.random()}`;
       setToasts((prev) => [...prev, { id, text, type }]);
       setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
+        dismissToast(id);
       }, 3500);
     },
-    [],
+    [dismissToast],
   );
 
   return (
@@ -143,21 +155,23 @@ export function AppUIProvider({ children }: { children: React.ReactNode }) {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-sm font-medium shadow-lg transition-all duration-150 ${
-              toast.type === 'error'
-                ? 'bg-red-950/95 border-red-800 text-red-100 dark:bg-red-950/95 dark:border-red-800 dark:text-red-100'
-                : toast.type === 'info'
-                  ? 'bg-slate-900/95 border-slate-700 text-white dark:bg-zinc-900/95 dark:border-zinc-700'
-                  : 'bg-emerald-950/95 border-emerald-800 text-emerald-100 dark:bg-zinc-900/95 dark:border-amber-400/40 dark:text-amber-200'
-            }`}
+            className={`toast-notification pointer-events-auto relative flex items-center justify-between gap-3 overflow-hidden rounded-xl border border-zinc-200 bg-white py-3 pr-3 pl-5 text-sm font-medium text-zinc-950 shadow-xl shadow-zinc-950/10 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:shadow-black/30 ${toast.isLeaving ? 'toast-notification--leaving' : ''}`}
           >
+            <span
+              className={`absolute inset-y-0 left-0 w-1 ${
+                toast.type === 'error'
+                  ? 'bg-red-500'
+                  : toast.type === 'info'
+                    ? 'bg-sky-500'
+                    : 'bg-emerald-500'
+              }`}
+              aria-hidden="true"
+            />
             <span>{toast.text}</span>
             <button
               type="button"
-              onClick={() =>
-                setToasts((prev) => prev.filter((t) => t.id !== toast.id))
-              }
-              className="text-xs opacity-70 hover:opacity-100 px-1.5 py-0.5"
+              onClick={() => dismissToast(toast.id)}
+              className="px-1.5 py-0.5 text-xs text-zinc-500 transition-colors hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white"
               aria-label="Fechar notificação"
             >
               Fechar
