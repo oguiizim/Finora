@@ -22,7 +22,10 @@ function Page() {
   const [searchText, setSearchText] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false)
+  const [categoryMenuOpensUp, setCategoryMenuOpensUp] = useState(false)
+  const [categoryMenuMaxHeight, setCategoryMenuMaxHeight] = useState(256)
   const categoryMenuRef = useRef<HTMLDivElement>(null)
+  const categoryTriggerRef = useRef<HTMLButtonElement>(null)
   const { data, isLoading } = useQuery({
     queryKey: ['transactions'],
     queryFn: () => listTransactions({ data: { period: 'LAST_6_MONTHS', all: true } }),
@@ -32,6 +35,25 @@ function Page() {
     queryFn: () => listCategories(),
   })
   const selectedCategory = categories.find((category) => category.id === categoryId)
+  const toggleCategoryMenu = () => {
+    if (isCategoryMenuOpen) {
+      setIsCategoryMenuOpen(false)
+      return
+    }
+
+    const triggerBounds = categoryTriggerRef.current?.getBoundingClientRect()
+    if (!triggerBounds) return
+
+    const spaceAbove = triggerBounds.top - 8
+    const spaceBelow = window.innerHeight - triggerBounds.bottom - 8
+    const expectedMenuHeight = Math.min(256, (categories.length + 1) * 40 + 12)
+    const opensUp = spaceBelow < expectedMenuHeight
+    const availableSpace = opensUp ? spaceAbove : spaceBelow
+
+    setCategoryMenuOpensUp(opensUp)
+    setCategoryMenuMaxHeight(Math.min(256, Math.max(0, availableSpace)))
+    setIsCategoryMenuOpen(true)
+  }
   const filteredTransactions = useMemo(() => {
     const search = searchText.trim().toLocaleLowerCase('pt-BR')
     return (data?.items ?? []).filter((transaction) => {
@@ -89,11 +111,12 @@ function Page() {
         <span className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-zinc-300">Filtrar por categoria</span>
         <div className="relative" ref={categoryMenuRef}>
           <button
+            ref={categoryTriggerRef}
             type="button"
             aria-haspopup="listbox"
             aria-expanded={isCategoryMenuOpen}
             aria-controls="transaction-category-options"
-            onClick={() => setIsCategoryMenuOpen((open) => !open)}
+            onClick={toggleCategoryMenu}
             className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 text-left text-sm text-slate-900 transition-colors hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-amber-400/60 dark:focus:ring-amber-400"
           >
             <span className="flex min-w-0 items-center gap-2.5">
@@ -129,7 +152,8 @@ function Page() {
               id="transaction-category-options"
               role="listbox"
               aria-label="Filtrar por categoria"
-              className="absolute z-30 mt-2 max-h-64 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-[#181a20]"
+              style={{ maxHeight: categoryMenuMaxHeight }}
+              className={`absolute z-30 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-[#181a20] ${categoryMenuOpensUp ? 'bottom-full mb-2' : 'top-full mt-2'}`}
             >
               <button
                 type="button"
