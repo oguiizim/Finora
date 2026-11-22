@@ -433,7 +433,7 @@ export function TransactionForm({
               <ChevronDown aria-hidden="true" className={`h-4 w-4 shrink-0 text-slate-500 transition-transform dark:text-zinc-400 ${isCategoryMenuOpen ? 'rotate-180' : ''}`} />
             </button>
             {isCategoryMenuOpen && (
-              <div id="transaction-form-category-options" role="listbox" aria-label="Categoria da transação" className="absolute z-30 mt-2 max-h-64 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-[#181a20]">
+              <div id="transaction-form-category-options" role="listbox" aria-label="Categoria da transação" className="absolute bottom-full z-30 mb-2 max-h-64 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-[#181a20]">
                 {type === 'INCOME' && (
                   <button type="button" role="option" aria-selected={!categoryId} onClick={() => { setCategoryId(''); setIsCategoryMenuOpen(false); }} className={`flex min-h-10 w-full items-center rounded-lg px-2.5 text-left text-sm transition-colors ${!categoryId ? 'bg-emerald-50 font-semibold text-emerald-800 dark:bg-amber-400/10 dark:text-amber-300' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white'}`}>
                     Sem categoria

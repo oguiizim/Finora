@@ -2,8 +2,6 @@
 
 set -e
 
-echo "Starting the server..."
+cd "$(dirname "$0")"
 
-go build main.go
-
-./main.exe
+go run main.go
